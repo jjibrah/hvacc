@@ -43,7 +43,9 @@ MediHub is a reference project only. Its workflows and lessons may inform this p
 ```text
 Caller
   -> hospital test number
-  -> Retell call handler / language agent
+  -> Retell call handler asks for language
+  -> caller selects a supported language
+  -> call handler routes to the matching language agent
   -> specialist or department enquiry
   -> backend availability lookup
   -> caller confirms a session
@@ -60,16 +62,16 @@ The product consists of four main parts:
 
 | Part | Responsibilities |
 | --- | --- |
-| Retell AI agent | Handles phone conversations, uses approved hospital knowledge, calls backend tools for availability and booking, and sends call and analysis events through webhooks. |
+| Retell agent system | Uses an initial call handler to collect language choice and route to a language-specific agent. The selected agent handles the conversation, uses approved hospital knowledge, calls backend tools for availability and booking, and sends call and analysis events through webhooks. |
 | Backend | Uses Next.js server routes and services to expose Retell tools, validate requests and permissions, process webhooks, and enforce booking, capacity, follow-up, and audit rules. |
 | Database | Uses PostgreSQL through Supabase to store hospital, staff, doctor, schedule, caller, patient, appointment, call, transcript, follow-up, integration, and audit records. It is the appointment authority for the first release. |
 | Frontend | Uses Next.js and React to provide the staff dashboard for calls, appointments, schedules, service configuration, follow-ups, and reports, including authorized operational actions. |
 
 ```text
-Caller -> Retell AI agent -> Backend -> Database
-                              |
-                              v
-                        Staff dashboard
+Caller -> Retell agent system -> Backend -> Database
+                                  |
+                                  v
+                            Staff dashboard
 ```
 
 Supabase Auth provides staff identity and session management as part of the backend and database infrastructure. It is not a separate product surface.

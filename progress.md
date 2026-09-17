@@ -21,7 +21,7 @@ Project boundary: this is a private, non-production learning project. The projec
 | Module | Status | Completion gate |
 | --- | --- | --- |
 | 0. Decisions and prerequisites | In progress | Required decisions and development accounts are recorded |
-| 1. Repository and application foundation | Not started | A new developer can run checks and start the app |
+| 1. Repository and application foundation | In progress | A new developer can run checks and start the app |
 | 2. Database and domain model | Not started | Migrations and deterministic synthetic seeds work |
 | 3. Authentication and authorization | Not started | All six roles pass server-side access tests |
 | 4. Hospital and staff administration | Not started | Admin can safely manage hospital users and settings |
@@ -49,8 +49,8 @@ Project boundary: this is a private, non-production learning project. The projec
 - [x] Define follow-up assignment, due-time, escalation, and resolution policies.
 - [x] Define appointment cancellation, rescheduling, capacity, and session-closing rules.
 - [x] Write metric definitions before implementing reporting.
-- [ ] Provision a separate development Supabase project.
-- [ ] Provision an isolated development Retell agent and test number or browser-call facility.
+- [x] Provision a separate development Supabase project.
+- [x] Provision isolated development Retell agents and a browser-call test facility.
 - [ ] Record approved agent, version, number, routing, tool, webhook, and knowledge identifiers.
 - [x] Agree on a public development endpoint or tunnel approach and assign test-call cost ownership to the project developer; paid calls require a separately recorded budget.
 - [x] Approve a synthetic dataset containing hospital, staff, doctors, sessions, callers, patients, and expected outcomes for learning use only.
@@ -59,19 +59,21 @@ Exit gate: required decisions, owners, development resources, and synthetic data
 
 ## Module 1 — Repository and application foundation
 
-- [ ] Initialize a valid Git repository and define the branching and review workflow.
-- [ ] Scaffold Next.js with the App Router, React, TypeScript, npm, and Tailwind CSS.
-- [ ] Add strict TypeScript, ESLint, formatting, import boundaries, and scripts for all checks.
-- [ ] Define a maintainable structure for routes, UI components, domain services, database code, integrations, authorization, and tests.
-- [ ] Add environment-variable validation with separate server-only and public schemas.
-- [ ] Add `.env.example` containing names and explanations but no credentials.
-- [ ] Add unit/integration test tooling and browser end-to-end testing.
-- [ ] Add React Query at the application boundary; add Zustand only if a concrete UI-state need appears.
-- [ ] Create a base application shell with accessible navigation, loading states, error boundaries, and not-found handling.
-- [ ] Add CI checks for install, type-check, lint, tests, and build.
-- [ ] Write setup, local-development, test, and troubleshooting instructions.
+- [x] Initialize a valid Git repository and define the branching and review workflow.
+- [x] Scaffold Next.js with the App Router, React, TypeScript, npm, and Tailwind CSS.
+- [x] Add strict TypeScript, ESLint, formatting, import boundaries, and scripts for all checks.
+- [x] Define a maintainable structure for routes, UI components, domain services, database code, integrations, authorization, and tests.
+- [x] Add environment-variable validation with separate server-only and public schemas.
+- [x] Add `.env.example` containing names and explanations but no credentials.
+- [x] Add unit/integration test tooling and browser end-to-end testing.
+- [x] Add React Query at the application boundary; add Zustand only if a concrete UI-state need appears.
+- [x] Create a base application shell with accessible navigation, loading states, error boundaries, and not-found handling.
+- [x] Add CI checks for install, type-check, lint, tests, and build.
+- [x] Write setup, local-development, test, and troubleshooting instructions.
 
-Exit gate: a new developer can clone, configure, migrate, seed, test, build, and run the application from the documentation.
+Verification: formatting, ESLint/import boundaries, strict TypeScript, three unit tests, and the production build pass locally. The Playwright test is configured, Chromium is downloaded, and CI installs its operating-system dependencies automatically. Local execution remains pending because this machine requires an interactive administrator password to install `libnspr4.so` and related browser libraries.
+
+Exit gate: a new developer can clone, configure, test, build, and run the application from the documentation. Database migration and seed commands are introduced and verified in Module 2.
 
 ## Module 2 — Database and domain model
 
