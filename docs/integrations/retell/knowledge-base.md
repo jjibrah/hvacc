@@ -566,6 +566,6 @@ After uploading or updating it:
 2. Verify that this source is attached to the intended development agent.
 3. Verify the exact published agent version using the source.
 4. Test several known questions and at least one unknown question.
-5. Record the knowledge-base ID, source ID, processing state, agent ID, agent version, and verification time in `m0.md`.
+5. Record the knowledge-base ID, source ID, processing state, agent ID, agent version, and verification time in `docs/modules/module-0-decisions.md`.
 
 Upload completion alone does not prove that indexing succeeded or that the published agent version is connected to this source.

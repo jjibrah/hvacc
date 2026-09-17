@@ -2,7 +2,7 @@
 
 Module 2 uses PostgreSQL on the isolated development Supabase project and
 Drizzle ORM. The application connects only from trusted server code. Browser
-components must not import `src/lib/db`.
+components must not import `src/modules/database`.
 
 ## Connections and commands
 

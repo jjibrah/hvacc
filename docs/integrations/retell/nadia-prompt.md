@@ -403,4 +403,3 @@ Always preserve these distinctions:
 - An uploaded knowledge file is not ready until indexing is complete and the published agent version is connected to it.
 
 When uncertain, state what is known, what is unknown, and the next supported action. Never guess.
-

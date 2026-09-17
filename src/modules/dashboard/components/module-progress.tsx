@@ -1,4 +1,4 @@
-import { StatusBadge } from "@/components/ui/status-badge";
+import { StatusBadge } from "@/shared/ui/status/status-badge";
 
 const modules = [
   {
@@ -17,8 +17,14 @@ const modules = [
   {
     number: 2,
     name: "Database and domain model",
-    status: "pending" as const,
+    status: "complete" as const,
     detail: "Supabase, Drizzle schema, migrations, and synthetic seed data.",
+  },
+  {
+    number: 3,
+    name: "Authentication and authorization",
+    status: "pending" as const,
+    detail: "Supabase Auth, hospital roles, permissions, and record scope.",
   },
 ];
 
@@ -35,7 +41,7 @@ export function ModuleProgress() {
             Current progress
           </h2>
         </div>
-        <p className="text-sm text-slate-500">Module 1 in progress</p>
+        <p className="text-sm text-slate-500">Ready for Module 3</p>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">

@@ -60,6 +60,7 @@ It is not approved for real clinical or emergency use.
 | `npm run db:generate -- --name=<change>` | Generate a reviewed SQL migration from the Drizzle schema |
 | `npm run db:migrate` | Apply committed migrations to the configured database |
 | `npm run db:seed` | Insert the deterministic synthetic development dataset |
+| `npm run db:check` | Verify connectivity, migrations, tables, RLS, and seed health |
 | `npm run db:studio` | Open Drizzle Studio for the configured development database |
 | `npm run build` | Type-check and create the production build |
 | `npm run check` | Run formatting, linting, types, unit tests, and build |
@@ -81,28 +82,27 @@ sudo "$(command -v node)" "$(pwd)/node_modules/playwright/cli.js" install-deps c
 ```text
 hvacc/
 ├── .github/workflows/        Continuous-integration checks
-├── docs/                     Architecture and engineering documentation
+├── docs/
+│   ├── integrations/retell/  Retell prompts and synthetic knowledge
+│   ├── modules/              Module decisions and implementation notes
+│   ├── product/              Product requirements
+│   └── roadmap.md            Delivery roadmap
+├── drizzle/                  Ordered PostgreSQL migrations
 ├── e2e/                      Playwright browser tests
 ├── public/                   Static browser assets
 ├── src/
 │   ├── app/                  Next.js routes, layouts, and route states
-│   ├── components/           Reusable layout and UI components
-│   ├── features/             Product features grouped by capability
-│   ├── lib/
-│   │   ├── auth/             Authorization boundary (introduced in Module 3)
-│   │   ├── db/               Database boundary (introduced in Module 2)
-│   │   ├── env/              Server and browser environment validation
-│   │   ├── integrations/     External-provider adapters
-│   │   └── services/         Shared domain services
+│   ├── modules/              Domain capabilities kept together by ownership
+│   │   ├── dashboard/        Dashboard capability
+│   │   └── database/         Drizzle schema, seed, connection, and tests
+│   ├── shared/               Environment configuration and reusable UI
 │   └── test/                 Shared test configuration and factories
-├── kb.md                     Synthetic Retell knowledge base
-├── m0.md                     Module 0 evidence and decisions
-├── prd-docs.md               Product requirements
-└── progress.md               Delivery roadmap
+└── package.json              Commands and dependencies
 ```
 
 See [docs/architecture.md](docs/architecture.md) for dependency direction and
-security boundaries.
+security boundaries, or [docs/README.md](docs/README.md) for the documentation
+index.
 
 ## Git workflow
 
@@ -158,4 +158,6 @@ workflow installs the same dependencies automatically on its disposable runner.
 
 Set `DATABASE_URL` to the isolated Supabase development database. Prefer a
 direct or session-pooler URL in `DATABASE_MIGRATION_URL` for migrations. See
-[docs/database.md](docs/database.md) for the connection and schema conventions.
+[docs/modules/module-2-database.md](docs/modules/module-2-database.md) for the
+connection and schema conventions. Run `npm run db:check` for a read-only
+database health check.

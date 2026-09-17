@@ -7,7 +7,7 @@ const databaseUrl =
 
 export default defineConfig({
   dialect: "postgresql",
-  schema: "./src/lib/db/schema.ts",
+  schema: "./src/modules/database/schema.ts",
   out: "./drizzle",
   migrations: {
     schema: "drizzle",

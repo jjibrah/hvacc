@@ -1,5 +1,5 @@
-import { AppShell } from "@/components/layout/app-shell";
-import { ModuleProgress } from "@/features/dashboard/components/module-progress";
+import { ModuleProgress } from "@/modules/dashboard";
+import { AppShell } from "@/shared/ui/layout/app-shell";
 
 export default function Home() {
   return (

@@ -12,9 +12,8 @@ const eslintConfig = defineConfig([
     settings: {
       "boundaries/elements": [
         { type: "app", pattern: "src/app/**" },
-        { type: "features", pattern: "src/features/**" },
-        { type: "components", pattern: "src/components/**" },
-        { type: "lib", pattern: "src/lib/**" },
+        { type: "modules", pattern: "src/modules/**" },
+        { type: "shared", pattern: "src/shared/**" },
         { type: "test", pattern: "src/test/**" },
       ],
     },
@@ -29,32 +28,26 @@ const eslintConfig = defineConfig([
               allow: {
                 to: {
                   element: {
-                    types: {
-                      anyOf: ["app", "features", "components", "lib"],
-                    },
+                    types: { anyOf: ["app", "modules", "shared"] },
                   },
                 },
               },
             },
             {
-              from: { element: { type: "features" } },
+              from: { element: { type: "modules" } },
               allow: {
                 to: {
                   element: {
-                    types: { anyOf: ["features", "components", "lib"] },
+                    types: { anyOf: ["modules", "shared"] },
                   },
                 },
               },
             },
             {
-              from: { element: { type: "components" } },
+              from: { element: { type: "shared" } },
               allow: {
-                to: { element: { types: { anyOf: ["components"] } } },
+                to: { element: { types: { anyOf: ["shared"] } } },
               },
-            },
-            {
-              from: { element: { type: "lib" } },
-              allow: { to: { element: { types: { anyOf: ["lib"] } } } },
             },
             {
               from: { element: { type: "test" } },
@@ -62,7 +55,7 @@ const eslintConfig = defineConfig([
                 to: {
                   element: {
                     types: {
-                      anyOf: ["app", "features", "components", "lib", "test"],
+                      anyOf: ["app", "modules", "shared", "test"],
                     },
                   },
                 },
@@ -74,22 +67,22 @@ const eslintConfig = defineConfig([
     },
   },
   {
-    files: ["src/components/**/*.{ts,tsx}"],
+    files: ["src/shared/ui/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [
         "error",
         {
           paths: [
             {
-              name: "@/lib/env/server",
+              name: "@/shared/config/env/server",
               message: "Reusable UI components cannot import server secrets.",
             },
           ],
           patterns: [
             {
-              group: ["@/lib/db/**", "@/lib/integrations/**"],
+              group: ["@/modules/database/**", "@/modules/integrations/**"],
               message:
-                "Reusable UI components must receive server data through props or feature boundaries.",
+                "Reusable UI components must receive server data through props or module boundaries.",
             },
           ],
         },
