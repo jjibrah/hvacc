@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { authErrorResponse } from "@/modules/authentication/http";
-import { updateHospitalUserRole } from "@/modules/authentication/service";
+import { updateHospitalMembershipStatus } from "@/modules/authentication/service";
 
 export async function PATCH(
   request: Request,
@@ -10,10 +10,10 @@ export async function PATCH(
   try {
     const { membershipId } = await params;
     const body = await request.json();
-    await updateHospitalUserRole({
+    await updateHospitalMembershipStatus({
       hospitalId: body.hospitalId,
       membershipId,
-      role: body.role,
+      status: body.status,
       expectedUpdatedAt: body.expectedUpdatedAt,
     });
     return NextResponse.json({ data: { updated: true } });

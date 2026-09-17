@@ -2,6 +2,7 @@ export { evaluateAuthorization } from "./authorization";
 export {
   AuthenticationRequiredError,
   AuthorizationDeniedError,
+  ConcurrentModificationError,
   ResourceNotFoundError,
 } from "./errors";
 export {

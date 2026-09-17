@@ -11,6 +11,7 @@ const migrationFiles = [
   "drizzle/0001_module-2-invariants.sql",
   "drizzle/0002_enable-rls.sql",
   "drizzle/0003_one-role-per-hospital.sql",
+  "drizzle/0004_hospital_admin_invariant.sql",
 ];
 
 let postgres: PGlite;
@@ -225,6 +226,35 @@ describe("Module 2 PostgreSQL schema", () => {
       update provider_events
       set processing_status = 'processed', processed_at = now()
       where id = '10000000-0000-4006-8000-000000000001';
+    `);
+  });
+
+  it("retains at least one active hospital administrator", async () => {
+    await postgres.exec(`
+      insert into profiles (id, auth_user_id, display_name, email) values
+        ('40000000-0000-4000-8000-000000000001', '40000000-0000-4001-8000-000000000001', 'Admin One', 'admin-one@example.test'),
+        ('40000000-0000-4000-8000-000000000002', '40000000-0000-4001-8000-000000000002', 'Admin Two', 'admin-two@example.test');
+      insert into hospital_memberships (id, hospital_id, profile_id, role) values
+        ('40000000-0000-4002-8000-000000000001', '10000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000001', 'hospital_admin'),
+        ('40000000-0000-4002-8000-000000000002', '10000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000002', 'reception_staff');
+    `);
+
+    await expectDatabaseRejection(
+      postgres.exec(`
+        update hospital_memberships
+        set status = 'disabled'
+        where id = '40000000-0000-4002-8000-000000000001';
+      `),
+      /retain an active administrator/i,
+    );
+
+    await postgres.exec(`
+      update hospital_memberships
+      set role = 'hospital_admin'
+      where id = '40000000-0000-4002-8000-000000000002';
+      update hospital_memberships
+      set status = 'disabled'
+      where id = '40000000-0000-4002-8000-000000000001';
     `);
   });
 });

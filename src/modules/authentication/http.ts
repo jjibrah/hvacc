@@ -4,6 +4,7 @@ import { ZodError } from "zod";
 import {
   AuthenticationRequiredError,
   AuthorizationDeniedError,
+  ConcurrentModificationError,
   ResourceNotFoundError,
 } from "./errors";
 
@@ -19,6 +20,12 @@ export function authErrorResponse(error: unknown) {
   }
   if (error instanceof ResourceNotFoundError) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
+  }
+  if (error instanceof ConcurrentModificationError) {
+    return NextResponse.json(
+      { error: "The record changed. Reload and try again." },
+      { status: 409 },
+    );
   }
   if (error instanceof ZodError) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });

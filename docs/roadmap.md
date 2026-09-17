@@ -1,353 +1,211 @@
-# Hospital Voice Agent Control Center — Delivery Roadmap
+# Hospital Voice Agent Control Center — Refined Delivery Roadmap
 
-This document is the implementation checklist from an empty repository to a complete, demonstrable platform. Check an item only when its code, tests, documentation, and relevant evidence are complete.
+This roadmap follows the revised implementation order:
 
-Project boundary: this is a private, non-production learning project. The project developer acts as product owner, technical owner, and provisional security reviewer; formal hospital and clinical approvals are not applicable while all content remains synthetic.
+1. Make the backend functional and trustworthy.
+2. Make the frontend functional against the backend contracts.
+3. Connect the Retell agent to the dashboard and verify the live path.
+4. Build AI chat configuration only after the preceding layers are stable.
 
-## Delivery principles
+This remains a private, non-production learning project. All hospitals, people,
+calls, and provider data must remain synthetic until separately approved.
 
-- Build one full-stack Next.js application using TypeScript and npm.
-- Treat PostgreSQL as the operational source of truth and access it through Drizzle ORM.
-- Keep Retell behind server-side provider interfaces; never expose provider or service-role secrets to the browser.
-- Store `hospital_id` explicitly on every hospital-owned record.
-- Keep call, AI outcome, appointment, follow-up, and handoff lifecycles independent.
-- Treat appointment records as the authority for bookings and capacity.
-- Enforce authorization on the server for pages, APIs, searches, exports, downloads, recordings, and real-time updates.
-- Use only synthetic people and isolated development integrations until production use is separately approved.
-- Build each module as a vertical slice: schema, service, authorization, API, UI, tests, audit, and documentation.
+## Delivery rules
+
+- PostgreSQL is the source of truth and is accessed through Drizzle.
+- Retell is accessed only through server-side provider adapters.
+- Every hospital-owned record and request is hospital-scoped.
+- UI visibility never replaces server-side authorization.
+- Provider evidence is stored before it is interpreted or projected.
+- Unknown, pending, stale, and failed states are explicit.
+- Every mutation has validation, safe errors, concurrency behavior, and audit evidence.
+- A module is complete only when its code, tests, documentation, and exit gate are complete.
 
 ## Progress summary
 
-| Module | Status | Completion gate |
-| --- | --- | --- |
-| 0. Decisions and prerequisites | In progress | Required decisions and development accounts are recorded |
-| 1. Repository and application foundation | In progress | A new developer can run checks and start the app |
-| 2. Database and domain model | Complete | Migrations and deterministic synthetic seeds work |
-| 3. Authentication and authorization | In progress | All six roles pass server-side access tests |
-| 4. Hospital and staff administration | Not started | Admin can safely manage hospital users and settings |
-| 5. Scheduling and capacity | Not started | Concurrent booking cannot overbook a session |
-| 6. Caller, patient, and appointment management | Not started | Booking, cancellation, and rescheduling are idempotent |
-| 7. Retell configuration inventory | Not started | Exact development routing and versions are visible |
-| 8. Retell tools and webhook ingestion | Not started | Signed, duplicate, late, and partial events are handled |
-| 9. Calls and conversation review | Not started | Staff can explain a call using source evidence |
-| 10. Follow-up and handoff | Not started | An unresolved journey creates owned, traceable work |
-| 11. Dashboard and reporting | Not started | Every metric reconciles with its underlying records |
-| 12. Knowledge visibility | Not started | Readiness reflects indexing and agent connection state |
-| 13. Audit, diagnostics, and resilience | Not started | Failures are observable and important actions auditable |
-| 14. Accessibility and user experience | Not started | Required accessibility and responsive checks pass |
-| 15. Test automation and acceptance evidence | Not started | All PRD acceptance cases have recorded evidence |
-| 16. Deployment and operational handover | Not started | Staging is reproducible and support ownership is clear |
-| 17. Production-readiness review | Not started | Explicit approval is recorded for every production concern |
+| Module | Phase | Status | Exit gate |
+| --- | --- | --- | --- |
+| 0. Decisions and prerequisites | Foundation | In progress | Scope, owners, synthetic data, and provider resources are documented |
+| 1. Application foundation | Foundation | In progress | A developer can install, test, build, and run the app |
+| 2. Core database and domain model | Backend | Complete | Fresh migrations and deterministic seed succeed |
+| 3. Identity and authorization backend | Backend | In progress | Every operation has tested auth, membership, permission, and scope checks |
+| 4. Hospital administration backend | Backend | In progress | Configuration, users, departments, and doctors are manageable through APIs |
+| 5. Scheduling and appointment backend | Backend | Not started | Availability, capacity, booking, cancellation, and rescheduling are transactional |
+| 6. Retell provider backend | Backend | In progress | Retell inventory, event receipt, evidence, and sync status are reliable |
+| 7. Operational backend | Backend | Not started | Calls, follow-ups, handoffs, and diagnostics have complete server workflows |
+| 8. Frontend application shell | Frontend | Partially complete | The client works against typed backend contracts and handles failure states |
+| 9. Frontend administration | Frontend | Partially complete | Administrators can complete hospital administration tasks from the dashboard |
+| 10. Frontend operations and dashboard | Frontend | Not started | Staff workflows work and metrics reconcile to backend records |
+| 11. Retell agent-to-dashboard connection | Integration | Not started | A test call can be traced from Retell into the dashboard |
+| 12. AI chat configuration | AI configuration | Deferred | Chat configuration is built on verified provider and audit contracts |
+| 13. Hardening, acceptance, and handover | Release | Not started | Security, failure, accessibility, deployment, and acceptance evidence are complete |
 
 ## Module 0 — Decisions and prerequisites
 
-- [x] Confirm the first hospital name, stable identifier, timezone, default currency, and synthetic contact details.
-- [x] Record the learning-project ownership model for product, synthetic content, provisional security review, and technical operations.
-- [x] Convert the six locked roles into an agreed permission matrix covering resources and actions.
-- [x] Decide which roles may view transcripts, play recordings, download recordings, view patient contact details, export data, view audits, and view technical diagnostics.
-- [x] Define doctor ownership rules, including cover arrangements and delegated access.
-- [x] Define follow-up assignment, due-time, escalation, and resolution policies.
-- [x] Define appointment cancellation, rescheduling, capacity, and session-closing rules.
-- [x] Write metric definitions before implementing reporting.
-- [x] Provision a separate development Supabase project.
-- [x] Provision isolated development Retell agents and a browser-call test facility.
-- [ ] Record approved agent, version, number, routing, tool, webhook, and knowledge identifiers.
-- [x] Agree on a public development endpoint or tunnel approach and assign test-call cost ownership to the project developer; paid calls require a separately recorded budget.
-- [x] Approve a synthetic dataset containing hospital, staff, doctors, sessions, callers, patients, and expected outcomes for learning use only.
+- [x] Confirm synthetic hospital identity, stable key, timezone, currency, and contacts.
+- [x] Confirm six locked roles and baseline permission matrix.
+- [x] Define doctor ownership, scheduling, appointment, follow-up, and reporting rules.
+- [x] Provision isolated Supabase and Retell development resources.
+- [ ] Record approved Retell agent, version, phone number, routing, tool, webhook, and knowledge identifiers.
+- [x] Document synthetic-only use, development endpoint, and test-call cost ownership.
 
-Exit gate: required decisions, owners, development resources, and synthetic data are documented without committing secrets.
+Exit gate: product, security, provider, and test-data decisions are recorded without secrets.
 
-## Module 1 — Repository and application foundation
+## Module 1 — Application foundation
 
-- [x] Initialize a valid Git repository and define the branching and review workflow.
-- [x] Scaffold Next.js with the App Router, React, TypeScript, npm, and Tailwind CSS.
-- [x] Add strict TypeScript, ESLint, formatting, import boundaries, and scripts for all checks.
-- [x] Define a maintainable structure for routes, UI components, domain services, database code, integrations, authorization, and tests.
-- [x] Add environment-variable validation with separate server-only and public schemas.
-- [x] Add `.env.example` containing names and explanations but no credentials.
-- [x] Add unit/integration test tooling and browser end-to-end testing.
-- [x] Add React Query at the application boundary; add Zustand only if a concrete UI-state need appears.
-- [x] Create a base application shell with accessible navigation, loading states, error boundaries, and not-found handling.
-- [x] Add CI checks for install, type-check, lint, tests, and build.
-- [x] Write setup, local-development, test, and troubleshooting instructions.
+- [x] Next.js App Router, React, TypeScript, npm, Tailwind, strict types, linting, and formatting.
+- [x] Server-only/public environment validation and `.env.example`.
+- [x] Domain, database, integration, route, UI, and test boundaries.
+- [x] Unit, integration, and Playwright tooling.
+- [x] Base app shell, navigation, loading, error, and not-found handling.
+- [x] CI and setup documentation.
+- [ ] Add conventions for request IDs, structured logs, and background jobs.
 
-Verification: formatting, ESLint/import boundaries, strict TypeScript, three unit tests, and the production build pass locally. The Playwright test is configured, Chromium is downloaded, and CI installs its operating-system dependencies automatically. Local execution remains pending because this machine requires an interactive administrator password to install `libnspr4.so` and related browser libraries.
+Exit gate: a new developer can clone, configure, test, build, and run the application.
 
-Exit gate: a new developer can clone, configure, test, build, and run the application from the documentation. Database migration and seed commands are introduced and verified in Module 2.
+## Module 2 — Core database and domain model
 
-## Module 2 — Database and domain model
+- [x] Model hospitals, configuration, profiles, memberships, roles, permissions, doctor links, departments, doctors, schedules, sessions, capacity, callers, patients, appointments, calls, recordings, transcripts, analyses, follow-ups, handoffs, Retell inventory, knowledge sources, provider events, idempotency, and audits.
+- [x] Add scoped foreign keys, uniqueness constraints, indexes, lifecycle checks, timestamps, soft deletion, and RLS defaults.
+- [x] Add deterministic synthetic seed data and migration tests.
+- [x] Add migration `0004_hospital_admin_invariant.sql` and keep the Drizzle journal current.
 
-- [x] Configure PostgreSQL/Supabase and Drizzle ORM.
-- [x] Establish conventions for UUIDs, timestamps, hospital timezones, soft deletion, enums, and personally identifiable information.
-- [x] Model hospitals and hospital configuration.
-- [x] Model authenticated profiles, hospital memberships, roles, explicit permissions, and doctor-profile links.
-- [x] Model departments, doctors, schedules, sessions, capacity, and session exceptions.
-- [x] Model callers and patients as separate entities with appropriate links.
-- [x] Model appointments and appointment history.
-- [x] Model calls, call participants, transcripts, recordings, analysis, and provider snapshots.
-- [x] Model the many-to-many relationship between calls and appointments.
-- [x] Model follow-ups, assignments, activity history, and handoff evidence.
-- [x] Model Retell agents, versions, phone numbers, routing snapshots, integrations, and knowledge sources.
-- [x] Model immutable provider events for deduplication and replay investigation.
-- [x] Model idempotency records for booking, cancellation, and rescheduling.
-- [x] Model audit events with actor, action, target, result, and safe before/after data.
-- [x] Add foreign keys, uniqueness constraints, indexes, check constraints, and hospital-scoping safeguards.
-- [x] Add migrations and deterministic synthetic seed data.
-- [x] Add schema tests for ownership, lifecycle constraints, uniqueness, and referential integrity.
+Exit gate: fresh databases migrate and seed deterministically; invalid ownership and state transitions are rejected by the database.
 
-Verification: both committed migrations apply to a fresh isolated PostgreSQL-compatible test database and to the documented development Supabase project. The deterministic seed succeeds on repeat execution without duplicate records. Schema integration tests reject invalid timezones, cross-hospital relationships, invalid appointment transitions, duplicate provider events, and provider-evidence mutation. The full repository check passes.
+## Module 3 — Identity and authorization backend
 
-Exit gate: a fresh database can be migrated and seeded deterministically, and invalid cross-hospital or invalid-state relationships are rejected.
+- [x] Supabase Auth session verification and active profile loading.
+- [x] Central authorization for hospital, doctor, and membership scope.
+- [x] Locked roles and default permission matrix.
+- [x] Protect initial users APIs and admin actions server-side.
+- [ ] Apply the same boundary to every service, API, webhook projection, search, export, download, and realtime surface.
+- [ ] Standardize safe `401`, `403`, `404`, and `409` responses.
+- [ ] Add negative tests proving every non-administrator role is rejected from hospital configuration and membership mutations.
+- [ ] Add defense-in-depth database policies before exposing Data API or realtime access.
 
-## Module 3 — Authentication and authorization
+Exit gate: direct requests cannot bypass UI permissions or leak cross-hospital record existence.
 
-- [x] Integrate Supabase Auth using secure server-side sessions.
-- [x] Implement the locked role identifiers: `reception_staff`, `operations_manager`, `quality_reviewer`, `doctor`, `hospital_admin`, and `platform_admin`.
-- [x] Implement centralized authorization using identity, hospital membership, role, record ownership, and explicit permissions.
-- [x] Restrict hospital roles to their assigned hospital.
-- [x] Restrict doctors to their own schedules, sessions, and relevant appointment records.
-- [x] Restrict hospital user/access management to `hospital_admin`.
-- [x] Limit `platform_admin` to explicitly authorised hospitals and audit every elevated action.
-- [x] Protect the initial users/permissions server component, route handlers, and mutations with the centralized authorization service.
-- [ ] Protect server components, route handlers, mutations, background handlers, search, export, download, and real-time subscriptions.
-- [ ] Decide and implement defense-in-depth database policies where appropriate.
-- [ ] Return safe `401`, `403`, and `404` responses without leaking record existence.
-- [x] Return safe `401`, `403`, and `404` responses for the initial users/permissions APIs.
-- [x] Add positive and negative authorization tests for the initial role and sensitive-data decisions.
+## Module 4 — Hospital administration backend
 
-Role testing can now bind separate development Auth users to each seeded profile
-with `npm run auth:link-profile -- <seed-profile-email> <auth-email>`; the
-command preserves the seeded role, refuses production, and prevents duplicate
-profile links. Initial RBAC slice: `/login`, `/admin/users`, and
-`/api/admin/users` are implemented. The remaining unchecked items cover
-authorization of future application surfaces and adding matching Data API or
-realtime policies when those surfaces are introduced.
+- [x] Hospital identity/configuration validation and update service.
+- [x] Membership listing, invitation, locked-role assignment, status changes, and administrator-retention checks.
+- [x] Department and doctor create/update functions with scoped ownership validation.
+- [x] Provider inventory read model for agents, versions, numbers, integrations, and knowledge sources.
+- [x] Audit events for access, role, configuration, department, doctor, and provider events.
+- [x] `updatedAt` compare-and-swap and safe conflict errors.
+- [x] API routes for hospital, users, membership status, departments, doctors, inventory, and audit events.
+- [ ] Move administration services into `src/modules/hospital-administration/server` and keep authentication focused on identity/RBAC.
+- [ ] Add API contract tests for authorized, unauthorized, malformed, cross-hospital, stale, and duplicate requests.
+- [ ] Add integration mutations after provider sync rules are defined.
 
-Exit gate: direct API requests cannot bypass the same permissions applied by the UI.
+Exit gate: hospital administrators can manage permitted configuration through APIs; every other role is rejected; the final active administrator cannot be removed or demoted.
 
-## Module 4 — Hospital and staff administration
+## Module 5 — Scheduling and appointment backend
 
-- [ ] Build hospital identity and configuration pages.
-- [ ] Build hospital user and membership management for administrators.
-- [ ] Support role assignment only from the locked role set.
-- [ ] Prevent removal or demotion that would leave the hospital without an administrator.
-- [ ] Build department and doctor administration.
-- [ ] Display connected agents, versions, phone numbers, integrations, and approved knowledge sources.
-- [ ] Audit access, role, configuration, and integration changes.
-- [ ] Add validation, optimistic-concurrency handling, and meaningful failure states.
+- [ ] Implement recurring schedules, dated sessions, closures, exceptions, and timezone-aware availability.
+- [ ] Make the backend the sole availability authority.
+- [ ] Implement transactional final-slot reservation and capacity release.
+- [ ] Implement caller/patient distinction and safe matching.
+- [ ] Require explicit confirmation and idempotency for booking.
+- [ ] Implement exactly-once cancellation and atomic rescheduling.
+- [ ] Preserve appointment history and audit every mutation.
+- [ ] Test retries, family bookings, timezone boundaries, closed sessions, and concurrent final-slot requests.
 
-Exit gate: a hospital administrator can manage permitted hospital configuration while every other hospital role is rejected server-side.
+Exit gate: only one of two concurrent requests can consume the final slot; retries do not duplicate or corrupt appointments.
 
-## Module 5 — Scheduling and capacity
+## Module 6 — Retell provider backend
 
-- [ ] Implement recurring schedules, dated sessions, capacity, closures, and exceptions.
-- [ ] Make the backend the sole authority for availability.
-- [ ] Implement availability queries by hospital, department, doctor, date, and eligibility rules.
-- [ ] Implement transactional capacity reservation and release.
-- [ ] Lock or otherwise serialize competing requests for the final slot.
-- [ ] Make session changes preserve appointment and audit history.
-- [ ] Build schedule views for permitted staff.
-- [ ] Build the doctor view restricted to the signed-in doctor's records.
-- [ ] Test timezone boundaries, daylight-saving behavior where relevant, and concurrent last-slot requests.
+- [ ] Define a provider-neutral interface for inventory, versions, numbers, routing, knowledge, health, and events.
+- [ ] Implement a server-only Retell client using `RETELL_API_KEY`.
+- [x] Implement append-only, idempotent Retell event receipt with hashing and provider audit events.
+- [x] Protect the development webhook with a server-only shared secret.
+- [ ] Verify the current Retell signature contract and fail closed when verification is unconfigured.
+- [ ] Implement inventory synchronization with freshness, last-success, last-attempt, and safe error fields.
+- [ ] Capture agent, version, number, routing, and knowledge snapshots for historical calls.
+- [ ] Add replay, late-event, partial-event, unknown-event, and outage handling.
 
-Exit gate: two concurrent requests for one remaining place result in one confirmed appointment and one clear failure.
+Exit gate: provider records are durable before processing, duplicates are harmless, invalid authentication is rejected, and historical calls identify their exact provider configuration.
 
-## Module 6 — Caller, patient, and appointment management
+## Module 7 — Operational backend
 
-- [ ] Implement caller search and safe caller matching.
-- [ ] Support a caller booking for themselves or a distinct patient.
-- [ ] Avoid unsafe automatic merging of people who share names or phone numbers.
-- [ ] Implement appointment creation only after explicit confirmation.
-- [ ] Require and enforce idempotency keys for booking operations.
-- [ ] Implement cancellation with exactly-once capacity release.
-- [ ] Implement atomic rescheduling that reserves the replacement safely and preserves history.
-- [ ] Implement `CONFIRMED`, `COMPLETED`, `CANCELLED`, and `NO_SHOW` transitions.
-- [ ] Build appointment list, detail, creation, cancellation, and rescheduling interfaces.
-- [ ] Record actor, source, call link, timestamps, reason, and audit evidence for mutations.
-- [ ] Test retry behavior, returning callers, family-member bookings, and conflicting mutations.
+- [ ] Implement call lifecycle, transcript, recording, analysis, outcome, cost, and evidence projections.
+- [ ] Implement follow-up creation, assignment, transitions, escalation, resolution, and activity history.
+- [ ] Keep handoff requested, attempted, accepted, and failed states separate and evidence-backed.
+- [ ] Add diagnostics, health/readiness, retry, timeout, dead-letter, and recovery workflows.
+- [ ] Independently authorize and audit sensitive access, playback, download, export, and elevated actions.
 
-Exit gate: appointment state and capacity remain correct through retries, cancellation, rescheduling, and family-member scenarios.
+Exit gate: calls and unresolved journeys are traceable without claiming outcomes the backend cannot prove.
 
-## Module 7 — Retell configuration inventory
+## Module 8 — Frontend application shell
 
-- [ ] Define a provider-neutral voice integration interface and a Retell implementation.
-- [ ] Store the development phone number purpose, agent identity, language, role, published version, selected version, routing, and connected knowledge.
-- [ ] Distinguish the agent's published version from the version selected by the number.
-- [ ] Record connection status, last successful check, last attempted check, and safe error detail.
-- [ ] Preserve agent, version, number, and routing snapshots on historical calls.
-- [ ] Keep production routing read-only in the first release.
-- [ ] Document isolated development changes and a rollback path.
-- [ ] Build an administrator inventory page with honest unknown and stale states.
+- [x] Authenticated app shell and permission-aware navigation.
+- [x] Shared loading, error, forbidden, success, and failure presentation.
+- [ ] Connect screens to typed API/query functions rather than direct domain assumptions.
+- [ ] Add pending, retry, stale-data, optimistic-update, conflict, empty, and provider-outage states.
+- [ ] Add accessibility, responsive, keyboard, focus, and form validation checks.
 
-Exit gate: a reviewer can identify the exact number, route, agent, language, and version used by a historical call.
+Exit gate: the frontend is a reliable client of backend contracts and never treats hidden controls as security.
 
-## Module 8 — Retell tools and webhook ingestion
+## Module 9 — Frontend administration
 
-- [ ] Implement server-side tools for availability lookup and confirmed booking.
-- [ ] Validate all provider tool inputs and return structured, safe errors.
-- [ ] Ensure booking cannot occur without explicit confirmation data and a successful database commit.
-- [ ] Capture the original raw webhook body.
-- [ ] Verify Retell signatures using the current provider contract and fail closed if verification is unconfigured.
-- [ ] Store provider event identifiers and payload metadata before processing.
-- [ ] Deduplicate repeated events without repeating calls, appointments, follow-ups, or audit effects.
-- [ ] Handle late, partial, unknown, and out-of-order events.
-- [ ] Separate receipt from processing when retries or background work are required.
-- [ ] Add replay-safe fixtures for every supported event type.
-- [ ] Measure event receipt-to-visibility latency.
+- [x] Hospital identity/configuration screen.
+- [x] Users, roles, membership status, and permission matrix screen.
+- [x] Department and doctor screens.
+- [x] Agent, version, phone number, integration, knowledge, and audit views.
+- [ ] Replace provisional server-action forms with typed API mutations where appropriate.
+- [ ] Display server validation, stale-write conflicts, forbidden state, audit confirmation, and provider freshness clearly.
+- [ ] Add browser tests for administrator workflows and rejection of other roles.
 
-Exit gate: valid events update the platform; invalid signatures are rejected; repeated or reordered events cannot corrupt state.
+Exit gate: an administrator can complete hospital administration from the dashboard; non-administrators cannot complete it through direct APIs.
 
-## Module 9 — Calls and conversation review
+## Module 10 — Frontend operations and dashboard
 
-- [ ] Implement independent call lifecycle and AI-outcome fields.
-- [ ] Build call search/filtering by date, agent, number, language, purpose, outcome, and booking relationship.
-- [ ] Build call detail showing timing, participants, provider identity, routing snapshot, transcript, recording state, summary, and analysis.
-- [ ] Display provider/source evidence separately from application or AI interpretation.
-- [ ] Link each call to zero, one, or multiple appointments.
-- [ ] Link unresolved work and follow-up activity.
-- [ ] Represent pending analysis, incomplete transcripts, missing recordings, unknown costs, delayed events, and provider outages honestly.
-- [ ] Gate transcript viewing, recording playback, recording download, and patient details independently.
-- [ ] Audit sensitive playback, download, and export actions as agreed.
-- [ ] Verify multilingual text, long speaker turns, and missing data states.
+- [ ] Build schedules, availability, appointments, callers, patients, calls, follow-ups, and handoff workflows.
+- [ ] Build operational metrics from typed backend queries.
+- [ ] Make every metric drill down to authorized source records.
+- [ ] Gate patient details, transcripts, playback, downloads, exports, and diagnostics independently.
+- [ ] Represent pending, unknown, stale, incomplete, and failed data honestly.
+- [ ] Add seed-data reconciliation and browser acceptance tests.
 
-Exit gate: an authorised reviewer can find a call and explain what was said, what the provider inferred, and what actually happened.
+Exit gate: permitted staff can perform their workflows end to end and metrics reconcile to backend records.
 
-## Module 10 — Follow-up and handoff
+## Module 11 — Retell agent-to-dashboard connection
 
-- [ ] Create follow-ups for failed bookings, unresolved enquiries, unavailable services, requested human contact, and technical failures.
-- [ ] Implement `OPEN`, `ASSIGNED`, `IN_PROGRESS`, `RESOLVED`, and `CANCELLED` transitions.
-- [ ] Derive overdue state from the due time rather than storing an independent flag.
-- [ ] Store reason, owner, due time, source, resolution condition, and activity history.
-- [ ] Build queue, filters, detail, assignment, progress, and resolution workflows.
-- [ ] Keep escalation request, handoff attempt, and handoff acceptance as separate evidence-backed states.
-- [ ] Prevent the UI and reports from claiming a live transfer without evidence.
-- [ ] Notify or surface overdue and unassigned work according to the agreed policy.
+- [ ] Configure an isolated Retell development number and agent route.
+- [ ] Connect the Retell webhook to the ingestion endpoint.
+- [ ] Run a synthetic test call through the selected agent/version/number.
+- [ ] Verify event receipt, deduplication, call projection, audit trail, and dashboard visibility.
+- [ ] Verify invalid authentication, duplicate, late, unavailable-provider, and partial-event paths.
+- [ ] Document routing, rollback, replay, and support procedures.
 
-Exit gate: a failed journey generates understandable work with an owner, due time, recovery action, history, and explicit resolution.
+Exit gate: a reviewer can place a synthetic call and trace it from Retell to durable backend evidence and the dashboard without manual database edits.
 
-## Module 11 — Dashboard and reporting
+## Module 12 — AI chat configuration (deferred)
 
-- [ ] Write a metric catalogue defining population, period, timezone, currency, numerator, denominator, exclusions, unknowns, and drill-down target.
-- [ ] Implement operational overview metrics from server-side queries.
-- [ ] Separate calls from bookings and AI-assessed success from verified outcomes.
-- [ ] Separate bookings created during a period from appointments scheduled during that period.
-- [ ] Show analysis coverage and unknown values separately from zero.
-- [ ] Build demand, schedule, capacity, unsuccessful journey, unresolved work, and booking-outcome views.
-- [ ] Make every metric navigate to its underlying filtered records.
-- [ ] Apply role, hospital, patient-data, transcript, and export permissions to reports.
-- [ ] Add safe CSV/export functionality only for authorised roles if approved.
-- [ ] Reconcile every metric against deterministic seed data and mutation tests.
+- [ ] Define chat configuration as a versioned, auditable resource tied to an agent/provider version.
+- [ ] Build configuration for prompts, approved knowledge, tools, languages, safety rules, and routing.
+- [ ] Validate before publishing and require administrator approval.
+- [ ] Preserve draft, published, failed, and rolled-back versions.
+- [ ] Test prompt/tool/knowledge changes against synthetic conversations.
+- [ ] Keep Retell secrets out of the browser and prevent browser-side provider mutation.
 
-Exit gate: every displayed number has a written definition and exactly matches the underlying authorised records.
+Exit gate: approved chat configuration publishes to the intended development agent, is traceable, rollback-safe, and audited.
 
-## Module 12 — Knowledge visibility
+## Module 13 — Hardening, acceptance, and handover
 
-- [ ] Model approved knowledge sources and their provider identifiers.
-- [ ] Display processing, indexed, failed, obsolete, and unknown states.
-- [ ] Verify both indexing readiness and agent connection before showing ready status.
-- [ ] Record last check time, data freshness, and safe failure details.
-- [ ] Allow quality reviewers to record improvement observations without directly changing approved content.
-- [ ] Restrict knowledge-source management to hospital administrators.
-- [ ] Audit source and connection changes.
+- [ ] Add structured logs and correlation identifiers without leaking secrets or unnecessary patient data.
+- [ ] Add rate limits, request-size limits, webhook replay protection, and secret rotation procedures.
+- [ ] Complete accessibility, responsive, authorization, migration, API, provider, browser, outage, and concurrency evidence.
+- [ ] Add deployment, backup, migration, monitoring, alert ownership, and incident runbooks.
+- [ ] Review synthetic-content boundaries and explicitly defer production approval concerns.
 
-Exit gate: the platform never equates upload completion with an indexed source connected to the active agent version.
+Exit gate: the backend, frontend, and Retell connection are reproducible, observable, tested, and ready for the separately approved AI configuration phase.
 
-## Module 13 — Audit, diagnostics, and resilience
+## Current next slice
 
-- [ ] Implement structured application logs with correlation, call, event, and request identifiers.
-- [ ] Ensure logs and errors do not expose secrets, complete recordings, or unnecessary patient data.
-- [ ] Implement immutable audit records for access changes, configuration changes, appointment mutations, exports, and elevated actions.
-- [ ] Display service health, last successful sync, data freshness, and provider degradation.
-- [ ] Preserve stored history when Retell or another dependency is unavailable.
-- [ ] Define retry, backoff, timeout, and dead-letter/recovery behavior.
-- [ ] Add health and readiness endpoints suitable for deployment.
-- [ ] Add error monitoring and alert ownership for staging.
-- [ ] Document webhook replay and failed-event recovery procedures.
-- [ ] Test dependency outages and recovery without inventing successful outcomes.
-
-Exit gate: operators can identify a failure, its affected records, the safe recovery action, and the audit trail.
-
-## Module 14 — Accessibility and user experience
-
-- [ ] Ensure full keyboard navigation and visible focus.
-- [ ] Use semantic landmarks, headings, labels, tables, and accessible dialogs.
-- [ ] Verify meaningful color contrast and non-color status indicators.
-- [ ] Respect reduced-motion preferences.
-- [ ] Test desktop, tablet, and narrow mobile layouts.
-- [ ] Test long hospital, doctor, patient, department, and agent names.
-- [ ] Test multilingual transcripts, right-to-left text where relevant, and mixed-language content.
-- [ ] Provide clear loading, empty, partial, stale, error, and permission-denied states.
-- [ ] Keep destructive actions explicit and confirmable.
-- [ ] Run automated accessibility checks and practical keyboard/screen-reader review.
-
-Exit gate: the core demonstration workflow is usable by keyboard, responsive, and honest in every incomplete or failure state.
-
-## Module 15 — Test automation and acceptance evidence
-
-- [ ] Unit-test state transitions, metric definitions, permission decisions, validation, and provider mapping.
-- [ ] Integration-test database constraints, transactions, idempotency, webhook processing, and audit behavior.
-- [ ] End-to-end test each role's permitted and forbidden workflows.
-- [ ] Prove a specialist enquiry can retrieve availability and create an appointment only after explicit confirmation.
-- [ ] Prove a call links to its transcript/provider evidence and actual appointment outcome.
-- [ ] Prove returning-caller and family-member bookings remain distinct.
-- [ ] Prove replayed webhooks cause no duplicate effect.
-- [ ] Prove repeated booking requests cause no duplicate appointment.
-- [ ] Prove concurrent last-slot requests do not overbook.
-- [ ] Prove cancellation releases capacity once and rescheduling is atomic.
-- [ ] Prove a failed journey creates and resolves owned follow-up work.
-- [ ] Prove unauthorized UI and direct API access are rejected.
-- [ ] Prove pending, missing, incomplete, unknown, delayed, and outage states render truthfully.
-- [ ] Prove dashboard, details, schedules, capacity, and metrics remain consistent after mutations and refresh.
-- [ ] Record normal event visibility latency and verify the agreed 30-second target.
-- [ ] Run a timed handover test in which a new reviewer explains a specified call within two minutes.
-- [ ] Record accessibility, responsive, reduced-motion, long-name, and multilingual verification.
-- [ ] Document test results, known limitations, and retained evidence.
-
-Exit gate: every acceptance criterion in the PRD is linked to a repeatable test and recorded evidence, not only a statement that it passed.
-
-## Module 16 — Deployment and operational handover
-
-- [ ] Choose and document the approved staging hosting architecture.
-- [ ] Configure staging secrets outside source control with least privilege and rotation ownership.
-- [ ] Automate migration and deployment with safe failure behavior.
-- [ ] Configure the public webhook endpoint, TLS, signature verification, and development Retell resources.
-- [ ] Add deployment smoke tests and rollback instructions.
-- [ ] Document user provisioning and deprovisioning.
-- [ ] Document event investigation, webhook replay, provider outage, booking failure, and access incident procedures.
-- [ ] Document monitoring, alert routing, service ownership, and escalation contacts.
-- [ ] Write an end-to-end demonstration and reviewer handover guide.
-- [ ] Verify a clean environment can be deployed from the documented process.
-
-Exit gate: staging can be reproduced, demonstrated, supported, and rolled back by someone other than the original developer.
-
-## Module 17 — Production-readiness review
-
-This module does not imply production approval. Each item requires evidence and an accountable approver.
-
-- [ ] Complete threat modeling and independent security review.
-- [ ] Approve privacy, consent, recording, transcript, and patient-contact handling policies.
-- [ ] Approve retention and deletion schedules for each data class.
-- [ ] Approve backup, restoration, recovery-time, and recovery-point procedures based on tested evidence.
-- [ ] Approve production hosting, regions, data processors, and contractual responsibilities.
-- [ ] Approve production Retell resources, routing changes, rollback, cost controls, and change ownership.
-- [ ] Approve hospital support, incident response, escalation, and business-continuity procedures.
-- [ ] Run load, reliability, and recovery tests against agreed targets.
-- [ ] Remediate all release-blocking accessibility, security, privacy, and data-integrity findings.
-- [ ] Record go/no-go decisions and residual risks explicitly.
-
-Exit gate: production use begins only after the relevant hospital and platform owners explicitly approve the evidence. The application must not claim compliance, security, retention, recovery, or scale beyond what has been verified.
-
-## Recommended first implementation slice
-
-Complete these items before investing in the full dashboard:
-
-1. Finish Modules 0–3 sufficiently to establish the schema, synthetic identities, and authorization boundary.
-2. Create one department, doctor, dated session, caller, and patient.
-3. Implement availability lookup and an idempotent, transactional confirmed booking.
-4. Ingest a signed synthetic Retell event and link the resulting call to the appointment.
-5. Display the call, source transcript evidence, appointment, actual outcome, and audit history.
-6. Repeat the webhook and booking requests to prove there are no duplicate effects.
-7. Run two simultaneous requests against the final slot to prove capacity cannot be exceeded.
-8. Exercise a failed booking that creates an assigned follow-up.
-
-This slice tests the platform's riskiest boundaries early: identity, hospital scope, provider trust, event ordering, appointment authority, idempotency, concurrency, and truthful operational reporting.
+1. Add backend/API contract tests for Modules 3–6.
+2. Create the provider-neutral Retell client and inventory synchronization worker.
+3. Add typed frontend API/query boundaries and administrator browser tests.
+4. Complete scheduling and appointment backend workflows.
+5. Perform the first synthetic Retell call-to-dashboard trace.
+6. Start Module 12 only after Module 11 passes its exit gate.

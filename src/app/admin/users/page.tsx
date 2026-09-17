@@ -15,6 +15,7 @@ import {
   inviteUserAction,
   updateRoleAction,
 } from "@/modules/authentication/admin-actions";
+import { updateMembershipStatusAction } from "@/modules/authentication/administration-actions";
 
 export default async function UsersPage({
   searchParams,
@@ -43,7 +44,9 @@ export default async function UsersPage({
       ? "Invitation sent."
       : params.success === "role_updated"
         ? "Role updated."
-        : null;
+        : params.success === "membership_updated"
+          ? "Membership status updated."
+          : null;
   const errorMessage =
     params.error === "role_update_failed"
       ? "The role could not be updated."
@@ -51,7 +54,9 @@ export default async function UsersPage({
         ? "The invitation could not be created."
         : params.error === "not_found"
           ? "The requested membership was not found."
-          : null;
+          : params.error === "membership_update_failed"
+            ? "The membership could not be updated. At least one active hospital administrator must remain."
+            : null;
 
   return (
     <div className="space-y-8">
@@ -191,6 +196,11 @@ export default async function UsersPage({
                         name="membershipId"
                         value={user.membershipId}
                       />
+                      <input
+                        type="hidden"
+                        name="expectedUpdatedAt"
+                        value={user.updatedAt.toISOString()}
+                      />
                       <select
                         name="role"
                         defaultValue={user.role}
@@ -214,6 +224,44 @@ export default async function UsersPage({
                         className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Save
+                      </button>
+                    </form>
+                    <form
+                      action={updateMembershipStatusAction}
+                      className="mt-2"
+                    >
+                      <input
+                        type="hidden"
+                        name="hospitalId"
+                        value={user.hospitalId}
+                      />
+                      <input
+                        type="hidden"
+                        name="membershipId"
+                        value={user.membershipId}
+                      />
+                      <input
+                        type="hidden"
+                        name="expectedUpdatedAt"
+                        value={user.updatedAt.toISOString()}
+                      />
+                      <input
+                        type="hidden"
+                        name="status"
+                        value={
+                          user.membershipStatus === "active"
+                            ? "disabled"
+                            : "active"
+                        }
+                      />
+                      <button
+                        type="submit"
+                        disabled={user.role === "platform_admin"}
+                        className="text-xs font-semibold text-slate-500 underline disabled:opacity-50"
+                      >
+                        {user.membershipStatus === "active"
+                          ? "Disable membership"
+                          : "Reactivate membership"}
                       </button>
                     </form>
                   </td>
