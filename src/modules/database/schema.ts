@@ -212,10 +212,9 @@ export const hospitalMemberships = pgTable(
     ...softDeleteColumn,
   },
   (table) => [
-    unique("hospital_memberships_profile_role_unique").on(
+    unique("hospital_memberships_profile_unique").on(
       table.hospitalId,
       table.profileId,
-      table.role,
     ),
     unique("hospital_memberships_scope_unique").on(table.hospitalId, table.id),
     index("hospital_memberships_profile_idx").on(table.profileId),

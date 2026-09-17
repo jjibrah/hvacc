@@ -23,7 +23,7 @@ Project boundary: this is a private, non-production learning project. The projec
 | 0. Decisions and prerequisites | In progress | Required decisions and development accounts are recorded |
 | 1. Repository and application foundation | In progress | A new developer can run checks and start the app |
 | 2. Database and domain model | Complete | Migrations and deterministic synthetic seeds work |
-| 3. Authentication and authorization | Not started | All six roles pass server-side access tests |
+| 3. Authentication and authorization | In progress | All six roles pass server-side access tests |
 | 4. Hospital and staff administration | Not started | Admin can safely manage hospital users and settings |
 | 5. Scheduling and capacity | Not started | Concurrent booking cannot overbook a session |
 | 6. Caller, patient, and appointment management | Not started | Booking, cancellation, and rescheduling are idempotent |
@@ -101,17 +101,27 @@ Exit gate: a fresh database can be migrated and seeded deterministically, and in
 
 ## Module 3 — Authentication and authorization
 
-- [ ] Integrate Supabase Auth using secure server-side sessions.
-- [ ] Implement the locked role identifiers: `reception_staff`, `operations_manager`, `quality_reviewer`, `doctor`, `hospital_admin`, and `platform_admin`.
-- [ ] Implement centralized authorization using identity, hospital membership, role, record ownership, and explicit permissions.
-- [ ] Restrict hospital roles to their assigned hospital.
-- [ ] Restrict doctors to their own schedules, sessions, and relevant appointment records.
-- [ ] Restrict hospital user/access and configuration management to `hospital_admin`.
-- [ ] Limit `platform_admin` to explicitly authorised hospitals and audit every elevated action.
+- [x] Integrate Supabase Auth using secure server-side sessions.
+- [x] Implement the locked role identifiers: `reception_staff`, `operations_manager`, `quality_reviewer`, `doctor`, `hospital_admin`, and `platform_admin`.
+- [x] Implement centralized authorization using identity, hospital membership, role, record ownership, and explicit permissions.
+- [x] Restrict hospital roles to their assigned hospital.
+- [x] Restrict doctors to their own schedules, sessions, and relevant appointment records.
+- [x] Restrict hospital user/access management to `hospital_admin`.
+- [x] Limit `platform_admin` to explicitly authorised hospitals and audit every elevated action.
+- [x] Protect the initial users/permissions server component, route handlers, and mutations with the centralized authorization service.
 - [ ] Protect server components, route handlers, mutations, background handlers, search, export, download, and real-time subscriptions.
 - [ ] Decide and implement defense-in-depth database policies where appropriate.
 - [ ] Return safe `401`, `403`, and `404` responses without leaking record existence.
-- [ ] Add positive and negative authorization tests for every role and sensitive data class.
+- [x] Return safe `401`, `403`, and `404` responses for the initial users/permissions APIs.
+- [x] Add positive and negative authorization tests for the initial role and sensitive-data decisions.
+
+Role testing can now bind separate development Auth users to each seeded profile
+with `npm run auth:link-profile -- <seed-profile-email> <auth-email>`; the
+command preserves the seeded role, refuses production, and prevents duplicate
+profile links. Initial RBAC slice: `/login`, `/admin/users`, and
+`/api/admin/users` are implemented. The remaining unchecked items cover
+authorization of future application surfaces and adding matching Data API or
+realtime policies when those surfaces are introduced.
 
 Exit gate: direct API requests cannot bypass the same permissions applied by the UI.
 

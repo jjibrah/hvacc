@@ -1,14 +1,28 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 
-const navigation = [
-  { label: "Overview", href: "#overview", current: true },
-  { label: "Calls", href: "#calls", current: false },
-  { label: "Appointments", href: "#appointments", current: false },
-  { label: "Follow-ups", href: "#follow-ups", current: false },
-  { label: "Configuration", href: "#configuration", current: false },
-];
+export function AppShell({
+  children,
+  current = "dashboard",
+  showUserManagement = false,
+}: {
+  children: ReactNode;
+  current?: "dashboard" | "users";
+  showUserManagement?: boolean;
+}) {
+  const navigation = [
+    { label: "Dashboard", href: "/dashboard", key: "dashboard" as const },
+    ...(showUserManagement
+      ? [
+          {
+            label: "Users & permissions",
+            href: "/admin/users",
+            key: "users" as const,
+          },
+        ]
+      : []),
+  ];
 
-export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
       <header className="border-b border-slate-200 bg-slate-950 text-white">
@@ -31,25 +45,23 @@ export function AppShell({ children }: { children: ReactNode }) {
           <ul className="flex gap-2 overflow-x-auto lg:flex-col">
             {navigation.map((item) => (
               <li key={item.label}>
-                <a
+                <Link
                   href={item.href}
-                  aria-current={item.current ? "page" : undefined}
+                  aria-current={item.key === current ? "page" : undefined}
                   className={`block rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 ${
-                    item.current
+                    item.key === current
                       ? "bg-teal-50 text-teal-800"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
                   }`}
                 >
                   {item.label}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
         </nav>
 
-        <main id="overview" className="min-w-0 p-4 sm:p-6 lg:p-8">
-          {children}
-        </main>
+        <main className="min-w-0 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

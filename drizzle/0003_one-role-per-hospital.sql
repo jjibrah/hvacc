@@ -1,0 +1,2 @@
+ALTER TABLE "hospital_memberships" DROP CONSTRAINT "hospital_memberships_profile_role_unique";--> statement-breakpoint
+ALTER TABLE "hospital_memberships" ADD CONSTRAINT "hospital_memberships_profile_unique" UNIQUE("hospital_id","profile_id");

@@ -8,5 +8,5 @@ server logic, UI, and tests together when they are specific to that capability.
   `server.ts`; routes should not reach into another module's internal folders.
 - Cross-module workflows belong in the module that owns the use case, not in a
   generic `utils` or `services` dumping ground.
-- Create a new module only when implementation starts. Module 3 will introduce
-  `src/modules/authentication` after approval.
+- Create a new module only when implementation starts. Authentication and RBAC
+  now live in `src/modules/authentication`.

@@ -10,6 +10,7 @@ const migrationFiles = [
   "drizzle/0000_module-2-initial.sql",
   "drizzle/0001_module-2-invariants.sql",
   "drizzle/0002_enable-rls.sql",
+  "drizzle/0003_one-role-per-hospital.sql",
 ];
 
 let postgres: PGlite;

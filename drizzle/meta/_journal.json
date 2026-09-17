@@ -22,6 +22,13 @@
       "when": 1789627115308,
       "tag": "0002_enable-rls",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789628989762,
+      "tag": "0003_one-role-per-hospital",
+      "breakpoints": true
     }
   ]
 }
