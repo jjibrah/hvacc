@@ -249,7 +249,11 @@ export async function getUserManagementContext() {
     where: eq(hospitals.id, accessibleHospital.hospitalId),
   });
   if (!hospital) throw new ResourceNotFoundError();
-  return { actor, hospital };
+  const profile = await db.query.profiles.findFirst({
+    where: eq(profiles.id, actor.profileId),
+  });
+  if (!profile) throw new ResourceNotFoundError();
+  return { actor, hospital, profile };
 }
 
 export async function getDashboardContext() {

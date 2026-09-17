@@ -1,67 +1,95 @@
+"use client";
+
 import type { ReactNode } from "react";
-import Link from "next/link";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
+
+import { AppHeader } from "./app-header";
+import { Sidebar } from "./sidebar";
+
+export type AppShellNavigationItem = {
+  label: string;
+  href: string;
+  key: string;
+  group: string;
+  badge?: string;
+  icon: AppShellNavigationIcon;
+};
+
+export type AppShellNavigationIcon =
+  | "dashboard"
+  | "phone"
+  | "calendar"
+  | "follow-up"
+  | "patient"
+  | "report"
+  | "doctor"
+  | "department"
+  | "schedule"
+  | "bot"
+  | "knowledge"
+  | "logs"
+  | "users"
+  | "hospital"
+  | "integration"
+  | "audit";
 
 export function AppShell({
   children,
-  current = "dashboard",
-  showUserManagement = false,
+  navigation,
+  hospitalName = "Hospital workspace",
+  userName = "Signed-in user",
+  roleLabel = "Staff member",
+  signOut,
 }: {
   children: ReactNode;
-  current?: "dashboard" | "users";
-  showUserManagement?: boolean;
+  navigation: AppShellNavigationItem[];
+  hospitalName?: string;
+  userName?: string;
+  roleLabel?: string;
+  signOut?: ReactNode;
 }) {
-  const navigation = [
-    { label: "Dashboard", href: "/dashboard", key: "dashboard" as const },
-    ...(showUserManagement
-      ? [
-          {
-            label: "Users & permissions",
-            href: "/admin/users",
-            key: "users" as const,
-          },
-        ]
-      : []),
-  ];
+  const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-950">
-      <header className="border-b border-slate-200 bg-slate-950 text-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <div>
-            <p className="text-sm font-semibold">CodeXGate</p>
-            <p className="text-xs text-slate-300">Prince Court Test Hospital</p>
-          </div>
-          <span className="rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1 text-xs font-medium text-amber-200">
-            Demonstration only
-          </span>
-        </div>
-      </header>
+    <div className="flex h-screen flex-col overflow-hidden bg-slate-100 text-slate-950">
+      <AppHeader
+        hospitalName={hospitalName}
+        onMobileMenuOpen={() => setSidebarOpen(true)}
+      />
 
-      <div className="mx-auto grid max-w-7xl lg:grid-cols-[15rem_1fr]">
-        <nav
-          aria-label="Primary navigation"
-          className="border-b border-slate-200 bg-white p-4 lg:min-h-[calc(100vh-73px)] lg:border-r lg:border-b-0 lg:p-6"
+      <div className="relative flex min-h-0 w-full flex-1">
+        {sidebarOpen ? (
+          <button
+            type="button"
+            aria-label="Close navigation"
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 top-16 z-20 bg-slate-950/35 lg:hidden"
+          />
+        ) : null}
+
+        <div
+          className={`fixed inset-y-0 top-16 left-0 z-30 h-[calc(100vh-4rem)] w-72 border-r border-slate-300 shadow-xl transition-[width,transform] duration-200 lg:static lg:z-auto lg:block lg:h-full lg:shrink-0 lg:translate-x-0 lg:shadow-none ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} ${sidebarCollapsed ? "lg:w-[76px]" : "lg:w-64"}`}
         >
-          <ul className="flex gap-2 overflow-x-auto lg:flex-col">
-            {navigation.map((item) => (
-              <li key={item.label}>
-                <Link
-                  href={item.href}
-                  aria-current={item.key === current ? "page" : undefined}
-                  className={`block rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 ${
-                    item.key === current
-                      ? "bg-teal-50 text-teal-800"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+          <Sidebar
+            navigation={navigation}
+            pathname={pathname}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() =>
+              setSidebarCollapsed((collapsed) => !collapsed)
+            }
+            userName={userName}
+            roleLabel={roleLabel}
+            signOut={signOut}
+            onNavigate={() => setSidebarOpen(false)}
+          />
+        </div>
 
-        <main className="min-w-0 p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          {children}
+        </main>
       </div>
     </div>
   );
