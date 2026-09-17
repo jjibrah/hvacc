@@ -57,6 +57,10 @@ It is not approved for real clinical or emergency use.
 | `npm run test:unit` | Run Vitest unit and integration tests once |
 | `npm run test:unit:watch` | Run Vitest while developing |
 | `npm run test:e2e` | Run Playwright browser tests |
+| `npm run db:generate -- --name=<change>` | Generate a reviewed SQL migration from the Drizzle schema |
+| `npm run db:migrate` | Apply committed migrations to the configured database |
+| `npm run db:seed` | Insert the deterministic synthetic development dataset |
+| `npm run db:studio` | Open Drizzle Studio for the configured development database |
 | `npm run build` | Type-check and create the production build |
 | `npm run check` | Run formatting, linting, types, unit tests, and build |
 
@@ -150,7 +154,8 @@ This form works when Node was installed through NVM and `sudo` cannot find
 `npx`. The system-level command may request your administrator password. The CI
 workflow installs the same dependencies automatically on its disposable runner.
 
-### Database commands are unavailable
+### Database commands fail to connect
 
-Database migrations and deterministic seed commands are introduced in Module 2.
-They are intentionally not part of the Module 1 foundation.
+Set `DATABASE_URL` to the isolated Supabase development database. Prefer a
+direct or session-pooler URL in `DATABASE_MIGRATION_URL` for migrations. See
+[docs/database.md](docs/database.md) for the connection and schema conventions.

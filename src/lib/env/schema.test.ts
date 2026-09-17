@@ -10,6 +10,7 @@ describe("environment schemas", () => {
       {
         NODE_ENV: "test",
         DATABASE_URL: "postgresql://example.invalid/database",
+        DATABASE_MIGRATION_URL: "postgresql://example.invalid/database",
         SUPABASE_URL: "https://example.supabase.co",
         SUPABASE_ANON_KEY: "synthetic-anon-key",
         SUPABASE_SERVICE_ROLE_KEY: "synthetic-service-role-key",

@@ -22,7 +22,7 @@ Project boundary: this is a private, non-production learning project. The projec
 | --- | --- | --- |
 | 0. Decisions and prerequisites | In progress | Required decisions and development accounts are recorded |
 | 1. Repository and application foundation | In progress | A new developer can run checks and start the app |
-| 2. Database and domain model | Not started | Migrations and deterministic synthetic seeds work |
+| 2. Database and domain model | Complete | Migrations and deterministic synthetic seeds work |
 | 3. Authentication and authorization | Not started | All six roles pass server-side access tests |
 | 4. Hospital and staff administration | Not started | Admin can safely manage hospital users and settings |
 | 5. Scheduling and capacity | Not started | Concurrent booking cannot overbook a session |
@@ -77,23 +77,25 @@ Exit gate: a new developer can clone, configure, test, build, and run the applic
 
 ## Module 2 — Database and domain model
 
-- [ ] Configure PostgreSQL/Supabase and Drizzle ORM.
-- [ ] Establish conventions for UUIDs, timestamps, hospital timezones, soft deletion, enums, and personally identifiable information.
-- [ ] Model hospitals and hospital configuration.
-- [ ] Model authenticated profiles, hospital memberships, roles, explicit permissions, and doctor-profile links.
-- [ ] Model departments, doctors, schedules, sessions, capacity, and session exceptions.
-- [ ] Model callers and patients as separate entities with appropriate links.
-- [ ] Model appointments and appointment history.
-- [ ] Model calls, call participants, transcripts, recordings, analysis, and provider snapshots.
-- [ ] Model the many-to-many relationship between calls and appointments.
-- [ ] Model follow-ups, assignments, activity history, and handoff evidence.
-- [ ] Model Retell agents, versions, phone numbers, routing snapshots, integrations, and knowledge sources.
-- [ ] Model immutable provider events for deduplication and replay investigation.
-- [ ] Model idempotency records for booking, cancellation, and rescheduling.
-- [ ] Model audit events with actor, action, target, result, and safe before/after data.
-- [ ] Add foreign keys, uniqueness constraints, indexes, check constraints, and hospital-scoping safeguards.
-- [ ] Add migrations and deterministic synthetic seed data.
-- [ ] Add schema tests for ownership, lifecycle constraints, uniqueness, and referential integrity.
+- [x] Configure PostgreSQL/Supabase and Drizzle ORM.
+- [x] Establish conventions for UUIDs, timestamps, hospital timezones, soft deletion, enums, and personally identifiable information.
+- [x] Model hospitals and hospital configuration.
+- [x] Model authenticated profiles, hospital memberships, roles, explicit permissions, and doctor-profile links.
+- [x] Model departments, doctors, schedules, sessions, capacity, and session exceptions.
+- [x] Model callers and patients as separate entities with appropriate links.
+- [x] Model appointments and appointment history.
+- [x] Model calls, call participants, transcripts, recordings, analysis, and provider snapshots.
+- [x] Model the many-to-many relationship between calls and appointments.
+- [x] Model follow-ups, assignments, activity history, and handoff evidence.
+- [x] Model Retell agents, versions, phone numbers, routing snapshots, integrations, and knowledge sources.
+- [x] Model immutable provider events for deduplication and replay investigation.
+- [x] Model idempotency records for booking, cancellation, and rescheduling.
+- [x] Model audit events with actor, action, target, result, and safe before/after data.
+- [x] Add foreign keys, uniqueness constraints, indexes, check constraints, and hospital-scoping safeguards.
+- [x] Add migrations and deterministic synthetic seed data.
+- [x] Add schema tests for ownership, lifecycle constraints, uniqueness, and referential integrity.
+
+Verification: both committed migrations apply to a fresh isolated PostgreSQL-compatible test database and to the documented development Supabase project. The deterministic seed succeeds on repeat execution without duplicate records. Schema integration tests reject invalid timezones, cross-hospital relationships, invalid appointment transitions, duplicate provider events, and provider-evidence mutation. The full repository check passes.
 
 Exit gate: a fresh database can be migrated and seeded deterministically, and invalid cross-hospital or invalid-state relationships are rejected.
 
