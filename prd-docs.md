@@ -1,7 +1,7 @@
 # Hospital Voice Agent Control Center
 
 > Product requirements and delivery specification  
-> **Status:** First-release definition  
+> **Status:** Non-production learning-project definition
 > **Primary audience:** Product, engineering, hospital operations, service quality, and platform support
 
 ## Contents
@@ -29,6 +29,8 @@ Build a dependable hospital operations dashboard connected to a Retell voice age
 The first release serves **one hospital**. Hospital ownership must remain explicit throughout the architecture so the solution can later be repeated across hospitals without redesigning its core data and authorization model.
 
 Multi-hospital onboarding, hospital switching, and general cross-hospital administration are not part of the first release.
+
+This is a private, non-production learning project. The project developer acts as product owner, technical owner, and provisional security reviewer. All hospital, caller, patient, appointment, and clinical content is synthetic and is not approved for real-world medical use.
 
 ### 1.3 Reference-project boundary
 

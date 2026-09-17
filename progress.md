@@ -2,6 +2,8 @@
 
 This document is the implementation checklist from an empty repository to a complete, demonstrable platform. Check an item only when its code, tests, documentation, and relevant evidence are complete.
 
+Project boundary: this is a private, non-production learning project. The project developer acts as product owner, technical owner, and provisional security reviewer; formal hospital and clinical approvals are not applicable while all content remains synthetic.
+
 ## Delivery principles
 
 - Build one full-stack Next.js application using TypeScript and npm.
@@ -18,7 +20,7 @@ This document is the implementation checklist from an empty repository to a comp
 
 | Module | Status | Completion gate |
 | --- | --- | --- |
-| 0. Decisions and prerequisites | Not started | Required decisions and development accounts are recorded |
+| 0. Decisions and prerequisites | In progress | Required decisions and development accounts are recorded |
 | 1. Repository and application foundation | Not started | A new developer can run checks and start the app |
 | 2. Database and domain model | Not started | Migrations and deterministic synthetic seeds work |
 | 3. Authentication and authorization | Not started | All six roles pass server-side access tests |
@@ -39,19 +41,19 @@ This document is the implementation checklist from an empty repository to a comp
 
 ## Module 0 — Decisions and prerequisites
 
-- [ ] Confirm the first hospital name, stable identifier, timezone, default currency, and synthetic contact details.
-- [ ] Confirm owners for product decisions, clinical-content approval, security review, and technical operations.
-- [ ] Convert the six locked roles into an agreed permission matrix covering resources and actions.
-- [ ] Decide which roles may view transcripts, play recordings, download recordings, view patient contact details, export data, view audits, and view technical diagnostics.
-- [ ] Define doctor ownership rules, including cover arrangements and delegated access.
-- [ ] Define follow-up assignment, due-time, escalation, and resolution policies.
-- [ ] Define appointment cancellation, rescheduling, capacity, and session-closing rules.
-- [ ] Write metric definitions before implementing reporting.
+- [x] Confirm the first hospital name, stable identifier, timezone, default currency, and synthetic contact details.
+- [x] Record the learning-project ownership model for product, synthetic content, provisional security review, and technical operations.
+- [x] Convert the six locked roles into an agreed permission matrix covering resources and actions.
+- [x] Decide which roles may view transcripts, play recordings, download recordings, view patient contact details, export data, view audits, and view technical diagnostics.
+- [x] Define doctor ownership rules, including cover arrangements and delegated access.
+- [x] Define follow-up assignment, due-time, escalation, and resolution policies.
+- [x] Define appointment cancellation, rescheduling, capacity, and session-closing rules.
+- [x] Write metric definitions before implementing reporting.
 - [ ] Provision a separate development Supabase project.
 - [ ] Provision an isolated development Retell agent and test number or browser-call facility.
 - [ ] Record approved agent, version, number, routing, tool, webhook, and knowledge identifiers.
-- [ ] Agree on a public development endpoint or tunnel and test-call cost ownership.
-- [ ] Approve a synthetic dataset containing hospital, staff, doctors, sessions, callers, patients, and expected outcomes.
+- [x] Agree on a public development endpoint or tunnel approach and assign test-call cost ownership to the project developer; paid calls require a separately recorded budget.
+- [x] Approve a synthetic dataset containing hospital, staff, doctors, sessions, callers, patients, and expected outcomes for learning use only.
 
 Exit gate: required decisions, owners, development resources, and synthetic data are documented without committing secrets.
 
