@@ -13,6 +13,7 @@ export const serverEnv = parseEnv(
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     RETELL_API_KEY: process.env.RETELL_API_KEY,
     RETELL_WEBHOOK_SECRET: process.env.RETELL_WEBHOOK_SECRET,
+    RETELL_VOICE_TOOL_SECRET: process.env.RETELL_VOICE_TOOL_SECRET,
   },
   "server",
 );

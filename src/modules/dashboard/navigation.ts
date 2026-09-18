@@ -9,6 +9,7 @@ import type { Permission, Role } from "../authentication/roles";
 type NavigationDefinition = AppShellNavigationItem & {
   icon: AppShellNavigationIcon;
   permission?: Permission;
+  permissions?: readonly Permission[];
   roles?: readonly Role[];
 };
 
@@ -50,7 +51,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     href: "/patients",
     key: "patients",
     group: "Workspace",
-    permission: "patients.contact.read",
+    permissions: ["patients.read", "patients.contact.read"],
   },
   {
     icon: "report",
@@ -148,6 +149,13 @@ function membershipCanSee(
   item: NavigationDefinition,
 ) {
   if (item.roles?.includes(membership.role)) return true;
+  if (
+    item.permissions?.some((permission) =>
+      membership.permissionCodes.has(permission),
+    )
+  ) {
+    return true;
+  }
   if (!item.permission) return true;
   return membership.permissionCodes.has(item.permission);
 }

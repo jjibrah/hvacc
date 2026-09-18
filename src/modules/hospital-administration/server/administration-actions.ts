@@ -8,6 +8,9 @@ import {
   saveDoctor,
   updateHospitalConfiguration,
   updateHospitalMembershipStatus,
+  linkDoctorProfile,
+  setMembershipPermissionOverride,
+  removeMembershipPermissionOverride,
 } from "./service";
 
 function done(path: string, message: string) {
@@ -25,6 +28,13 @@ function dateValue(data: FormData, key: string) {
   const result = value(data, key);
   return result || undefined;
 }
+function bool(data: FormData, key: string) {
+  return data.get(key) === "on";
+}
+function numberValue(data: FormData, key: string, fallback: number) {
+  const parsed = Number(value(data, key));
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
 
 export async function saveHospitalConfigurationAction(data: FormData) {
   try {
@@ -38,6 +48,67 @@ export async function saveHospitalConfigurationAction(data: FormData) {
       syntheticContactEmail: value(data, "syntheticContactEmail") || null,
       syntheticContactPhone: value(data, "syntheticContactPhone") || null,
       syntheticAddress: value(data, "syntheticAddress") || null,
+      operatingHours: Object.fromEntries(
+        [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday",
+        ].map((day) => [
+          day,
+          {
+            closed: bool(data, `${day}Closed`),
+            open: value(data, `${day}Open`),
+            close: value(data, `${day}Close`),
+          },
+        ]),
+      ),
+      appointmentPolicy: {
+        defaultDurationMinutes: numberValue(data, "defaultDurationMinutes", 30),
+        defaultCapacity: numberValue(data, "defaultCapacity", 1),
+        minimumAdvanceMinutes: numberValue(data, "minimumAdvanceMinutes", 120),
+        maximumAdvanceDays: numberValue(data, "maximumAdvanceDays", 60),
+        cancellationNoticeHours: numberValue(
+          data,
+          "cancellationNoticeHours",
+          24,
+        ),
+      },
+      patientPolicy: {
+        matchingMode: value(data, "patientMatchingMode") || "phone_or_name",
+        ambiguousRequiresConfirmation: bool(
+          data,
+          "ambiguousRequiresConfirmation",
+        ),
+      },
+      followUpPolicy: {
+        defaultQueue: value(data, "defaultFollowUpQueue") || "reception",
+        defaultPriority: value(data, "defaultFollowUpPriority") || "p3",
+        escalationHours: numberValue(data, "followUpEscalationHours", 24),
+      },
+      voicePolicy: {
+        defaultLanguage: value(data, "defaultVoiceLanguage") || "en",
+        fallbackMode: value(data, "voiceFallbackMode") || "human_follow_up",
+      },
+      notificationPolicy: {
+        appointmentRemindersEnabled: bool(data, "appointmentRemindersEnabled"),
+        reminderHoursBefore: numberValue(data, "reminderHoursBefore", 24),
+      },
+      privacyPolicy: {
+        recordingRetentionDays: numberValue(data, "recordingRetentionDays", 90),
+        transcriptRetentionDays: numberValue(
+          data,
+          "transcriptRetentionDays",
+          365,
+        ),
+        auditRetentionDays: numberValue(data, "auditRetentionDays", 730),
+      },
+      accessPolicy: {
+        sessionTimeoutMinutes: numberValue(data, "sessionTimeoutMinutes", 60),
+      },
       expectedUpdatedAt: dateValue(data, "expectedUpdatedAt"),
       expectedConfigurationUpdatedAt: dateValue(
         data,
@@ -93,4 +164,47 @@ export async function updateMembershipStatusAction(data: FormData) {
     fail("/admin/users", "membership_update_failed");
   }
   done("/admin/users", "membership_updated");
+}
+
+export async function linkDoctorProfileAction(data: FormData) {
+  try {
+    await linkDoctorProfile({
+      hospitalId: value(data, "hospitalId"),
+      membershipId: value(data, "membershipId"),
+      doctorId: value(data, "doctorId"),
+    });
+  } catch {
+    fail(`/admin/users/${value(data, "membershipId")}`, "doctor_link_failed");
+  }
+  done(`/admin/users/${value(data, "membershipId")}`, "doctor_linked");
+}
+
+export async function setPermissionOverrideAction(data: FormData) {
+  const membershipId = value(data, "membershipId");
+  try {
+    await setMembershipPermissionOverride({
+      hospitalId: value(data, "hospitalId"),
+      membershipId,
+      permissionCode: value(data, "permissionCode"),
+      granted: value(data, "granted") === "true",
+      reason: value(data, "reason") || "Administrative access review",
+    });
+  } catch {
+    fail(`/admin/users/${membershipId}`, "permission_update_failed");
+  }
+  done(`/admin/users/${membershipId}`, "permission_updated");
+}
+
+export async function removePermissionOverrideAction(data: FormData) {
+  const membershipId = value(data, "membershipId");
+  try {
+    await removeMembershipPermissionOverride({
+      hospitalId: value(data, "hospitalId"),
+      membershipId,
+      permissionCode: value(data, "permissionCode"),
+    });
+  } catch {
+    fail(`/admin/users/${membershipId}`, "permission_update_failed");
+  }
+  done(`/admin/users/${membershipId}`, "permission_updated");
 }

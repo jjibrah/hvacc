@@ -16,6 +16,7 @@ export const serverEnvSchema = z.object({
     .min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
   RETELL_API_KEY: z.string().min(1, "RETELL_API_KEY is required"),
   RETELL_WEBHOOK_SECRET: z.string().min(16).optional(),
+  RETELL_VOICE_TOOL_SECRET: z.string().min(16).optional(),
 });
 
 export const publicEnvSchema = z.object({

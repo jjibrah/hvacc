@@ -166,6 +166,38 @@ export const hospitalConfigurations = pgTable(
     syntheticContactPhone: text("synthetic_contact_phone"),
     syntheticAddress: text("synthetic_address"),
     defaultLocale: text("default_locale").default("en-MY").notNull(),
+    operatingHours: jsonb("operating_hours")
+      .$type<Record<string, unknown>>()
+      .default({})
+      .notNull(),
+    appointmentPolicy: jsonb("appointment_policy")
+      .$type<Record<string, unknown>>()
+      .default({})
+      .notNull(),
+    patientPolicy: jsonb("patient_policy")
+      .$type<Record<string, unknown>>()
+      .default({})
+      .notNull(),
+    followUpPolicy: jsonb("follow_up_policy")
+      .$type<Record<string, unknown>>()
+      .default({})
+      .notNull(),
+    voicePolicy: jsonb("voice_policy")
+      .$type<Record<string, unknown>>()
+      .default({})
+      .notNull(),
+    notificationPolicy: jsonb("notification_policy")
+      .$type<Record<string, unknown>>()
+      .default({})
+      .notNull(),
+    privacyPolicy: jsonb("privacy_policy")
+      .$type<Record<string, unknown>>()
+      .default({})
+      .notNull(),
+    accessPolicy: jsonb("access_policy")
+      .$type<Record<string, unknown>>()
+      .default({})
+      .notNull(),
     ...timestampColumns,
   },
   (table) => [
@@ -1190,6 +1222,8 @@ export const knowledgeSources = pgTable(
     providerKnowledgeBaseId: text("provider_knowledge_base_id").notNull(),
     providerSourceId: text("provider_source_id").notNull(),
     name: text("name").notNull(),
+    sourceType: text("source_type").default("text").notNull(),
+    content: text("content"),
     status: integrationStatus("status").default("draft").notNull(),
     checksum: text("checksum"),
     processedAt: timestamp("processed_at", {

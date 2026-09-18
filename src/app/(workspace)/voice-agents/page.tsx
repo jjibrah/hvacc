@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { isAuthError } from "@/modules/authentication/errors";
-import {
-  getHospitalAdministration,
-  getUserManagementContext,
-} from "@/modules/hospital-administration/server/service";
+import { getUserManagementContext } from "@/modules/hospital-administration/server/service";
+import { listVoiceAgents } from "@/modules/voice-agents/server/service";
+import Link from "next/link";
+import { VoiceAgentActions } from "@/modules/voice-agents/components/voice-agent-actions";
 
 export default async function Page() {
   let context;
@@ -17,7 +17,7 @@ export default async function Page() {
       </div>
     );
   }
-  const data = await getHospitalAdministration(context.hospital.id);
+  const data = await listVoiceAgents(context.hospital.id);
   return (
     <div className="space-y-6">
       <header>
@@ -26,9 +26,34 @@ export default async function Page() {
         </p>
         <h1 className="mt-1 text-3xl font-semibold">Connected voice agents</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Read-only provider inventory for agents, versions, and phone numbers.
+          Govern connected agents, versions, phone numbers, tools, and
+          readiness.
         </p>
       </header>
+      <div className="grid gap-3 md:grid-cols-4">
+        <div className="rounded-xl border bg-white p-4">
+          <p className="text-xs text-slate-500 uppercase">Active agents</p>
+          <p className="mt-2 text-2xl font-semibold">
+            {data.agents.filter((agent) => agent.status === "active").length}
+          </p>
+        </div>
+        <div className="rounded-xl border bg-white p-4">
+          <p className="text-xs text-slate-500 uppercase">Published versions</p>
+          <p className="mt-2 text-2xl font-semibold">
+            {data.versions.filter((version) => version.isPublished).length}
+          </p>
+        </div>
+        <div className="rounded-xl border bg-white p-4">
+          <p className="text-xs text-slate-500 uppercase">Phone numbers</p>
+          <p className="mt-2 text-2xl font-semibold">{data.phones.length}</p>
+        </div>
+        <div className="rounded-xl border bg-white p-4">
+          <p className="text-xs text-slate-500 uppercase">Approved knowledge</p>
+          <p className="mt-2 text-2xl font-semibold">
+            {data.approvedKnowledgeCount}
+          </p>
+        </div>
+      </div>
       <div className="grid gap-4 md:grid-cols-3">
         {data.agents.map((agent) => (
           <article
@@ -36,7 +61,12 @@ export default async function Page() {
             className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
           >
             <div className="flex items-start justify-between gap-3">
-              <h2 className="font-semibold">{agent.displayName}</h2>
+              <Link
+                href={`/voice-agents/${agent.id}`}
+                className="font-semibold text-teal-800 hover:underline"
+              >
+                {agent.displayName}
+              </Link>
               <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-800">
                 {agent.status}
               </span>
@@ -47,6 +77,10 @@ export default async function Page() {
             <p className="mt-3 font-mono text-xs text-slate-400">
               {agent.providerAgentId}
             </p>
+            <VoiceAgentActions
+              hospitalId={context.hospital.id}
+              agentId={agent.id}
+            />
           </article>
         ))}
       </div>
@@ -64,7 +98,7 @@ export default async function Page() {
               </span>
             </div>
           ))}
-          {data.phoneNumbers.map((phone) => (
+          {data.phones.map((phone) => (
             <div
               key={phone.id}
               className="flex justify-between border-b border-slate-100 py-2"

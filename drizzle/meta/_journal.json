@@ -36,6 +36,27 @@
       "when": 1789630000000,
       "tag": "0004_hospital_admin_invariant",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789730000000,
+      "tag": "0005_voice-knowledge-governance",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789731000000,
+      "tag": "0006_hospital_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789732000000,
+      "tag": "0007_patient_read_permission",
+      "breakpoints": true
     }
   ]
 }

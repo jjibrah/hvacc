@@ -11,6 +11,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  allowedDevOrigins: ["subgroup-flattery-endurance.ngrok-free.dev"],
 };
 
 export default nextConfig;

@@ -1,307 +1,44 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import {
-  assignableRoles,
-  defaultRolePermissions,
-  permissionLabels,
-  roleLabels,
-} from "@/modules/authentication";
+import { assignableRoles, defaultRolePermissions, permissionLabels, roleLabels, type Role } from "@/modules/authentication";
 import { isAuthError } from "@/modules/authentication/errors";
-import {
-  getUserManagementContext,
-  listHospitalUsers,
-} from "@/modules/hospital-administration/server/service";
-import {
-  inviteUserAction,
-  updateRoleAction,
-} from "@/modules/hospital-administration/server/admin-actions";
-import { updateMembershipStatusAction } from "@/modules/hospital-administration/server/administration-actions";
+import { getUserManagementContext, listHospitalUsers, listPendingHospitalInvitations } from "@/modules/hospital-administration/server/service";
+import { inviteUserAction } from "@/modules/hospital-administration/server/admin-actions";
 
-export default async function UsersPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string; success?: string }>;
-}) {
+type Params = Promise<Record<string, string | string[] | undefined>>;
+function value(params: Record<string, string | string[] | undefined>, key: string) { const v = params[key]; return Array.isArray(v) ? v[0] : v; }
+
+export default async function UsersPage({ searchParams }: { searchParams: Params }) {
   const params = await searchParams;
   let context;
-  try {
-    context = await getUserManagementContext();
-  } catch (error) {
+  try { context = await getUserManagementContext(); } catch (error) {
     if (isAuthError(error) && error.status === 401) redirect("/login");
-    return (
-      <section className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-900">
-        <h1 className="text-2xl font-semibold">Access denied</h1>
-        <p className="mt-2 text-sm">
-          You do not have permission to manage hospital users.
-        </p>
-      </section>
-    );
+    return <section className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-900"><h1 className="text-xl font-semibold">Access denied</h1><p className="mt-2 text-sm">You do not have permission to manage hospital users.</p></section>;
   }
+  const tab = value(params, "tab") ?? "users";
+  const search = value(params, "search") ?? "";
+  const role = value(params, "role") ?? "";
+  const status = value(params, "status") ?? "";
+  const users = await listHospitalUsers(context.hospital.id, { search, role, status });
+  const invitations = tab === "invitations" ? await listPendingHospitalInvitations(context.hospital.id) : [];
+  const active = users.filter((u) => u.membershipStatus === "active").length;
+  const disabled = users.filter((u) => u.membershipStatus === "disabled").length;
+  const custom = users.filter((u) => u.hasCustomPermissions).length;
+  const success = value(params, "success");
 
-  const users = await listHospitalUsers(context.hospital.id);
-  const statusMessage =
-    params.success === "invited"
-      ? "Invitation sent."
-      : params.success === "role_updated"
-        ? "Role updated."
-        : params.success === "membership_updated"
-          ? "Membership status updated."
-          : null;
-  const errorMessage =
-    params.error === "role_update_failed"
-      ? "The role could not be updated."
-      : params.error === "invitation_failed"
-        ? "The invitation could not be created."
-        : params.error === "not_found"
-          ? "The requested membership was not found."
-          : params.error === "membership_update_failed"
-            ? "The membership could not be updated. At least one active hospital administrator must remain."
-            : null;
-
-  return (
-    <div className="space-y-8">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium text-teal-700">Administration</p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-            Users & permissions
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-            Manage active membership roles for {context.hospital.displayName}.
-            Every change is checked again by the server and recorded in the
-            audit log.
-          </p>
-        </div>
-      </header>
-
-      {statusMessage ? (
-        <p
-          role="status"
-          className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800"
-        >
-          {statusMessage}
-        </p>
-      ) : null}
-      {errorMessage ? (
-        <p
-          role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
-        >
-          {errorMessage}
-        </p>
-      ) : null}
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold">Invite a hospital user</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          The invitation is sent through Supabase Auth. The role is stored only
-          after the Auth user is created successfully.
-        </p>
-        <form
-          action={inviteUserAction}
-          className="mt-5 grid gap-4 md:grid-cols-[1fr_1fr_12rem_auto] md:items-end"
-        >
-          <input type="hidden" name="hospitalId" value={context.hospital.id} />
-          <label className="text-sm font-medium">
-            Name
-            <input
-              required
-              name="displayName"
-              className="mt-2 block w-full rounded-lg border border-slate-300 px-3 py-2"
-            />
-          </label>
-          <label className="text-sm font-medium">
-            Email
-            <input
-              required
-              name="email"
-              type="email"
-              className="mt-2 block w-full rounded-lg border border-slate-300 px-3 py-2"
-            />
-          </label>
-          <label className="text-sm font-medium">
-            Role
-            <select
-              name="role"
-              defaultValue="reception_staff"
-              className="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
-            >
-              {assignableRoles.map((role) => (
-                <option key={role} value={role}>
-                  {roleLabels[role]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="submit"
-            className="rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
-          >
-            Send invite
-          </button>
-        </form>
-        <p className="mt-4 text-xs text-slate-500">
-          Platform administrator membership is intentionally not assignable from
-          a hospital UI.
-        </p>
-      </section>
-
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 p-6">
-          <h2 className="text-xl font-semibold">Hospital memberships</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            {users.length} membership{users.length === 1 ? "" : "s"} in this
-            hospital.
-          </p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[48rem] text-left text-sm">
-            <thead className="bg-slate-50 text-xs tracking-wide text-slate-500 uppercase">
-              <tr>
-                <th className="px-6 py-3">User</th>
-                <th className="px-6 py-3">Current role</th>
-                <th className="px-6 py-3">Membership</th>
-                <th className="px-6 py-3">Change role</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {users.map((user) => (
-                <tr key={user.membershipId}>
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-slate-900">
-                      {user.displayName}
-                    </div>
-                    <div className="text-slate-500">{user.email}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-800">
-                      {roleLabels[user.role]}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-600">
-                    {user.membershipStatus}
-                  </td>
-                  <td className="px-6 py-4">
-                    <form
-                      action={updateRoleAction}
-                      className="flex items-center gap-2"
-                    >
-                      <input
-                        type="hidden"
-                        name="hospitalId"
-                        value={user.hospitalId}
-                      />
-                      <input
-                        type="hidden"
-                        name="membershipId"
-                        value={user.membershipId}
-                      />
-                      <input
-                        type="hidden"
-                        name="expectedUpdatedAt"
-                        value={user.updatedAt.toISOString()}
-                      />
-                      <select
-                        name="role"
-                        defaultValue={user.role}
-                        disabled={user.role === "platform_admin"}
-                        className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm"
-                      >
-                        {assignableRoles.map((role) => (
-                          <option key={role} value={role}>
-                            {roleLabels[role]}
-                          </option>
-                        ))}
-                        {user.role === "platform_admin" ? (
-                          <option value="platform_admin">
-                            {roleLabels.platform_admin}
-                          </option>
-                        ) : null}
-                      </select>
-                      <button
-                        disabled={user.role === "platform_admin"}
-                        type="submit"
-                        className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Save
-                      </button>
-                    </form>
-                    <form
-                      action={updateMembershipStatusAction}
-                      className="mt-2"
-                    >
-                      <input
-                        type="hidden"
-                        name="hospitalId"
-                        value={user.hospitalId}
-                      />
-                      <input
-                        type="hidden"
-                        name="membershipId"
-                        value={user.membershipId}
-                      />
-                      <input
-                        type="hidden"
-                        name="expectedUpdatedAt"
-                        value={user.updatedAt.toISOString()}
-                      />
-                      <input
-                        type="hidden"
-                        name="status"
-                        value={
-                          user.membershipStatus === "active"
-                            ? "disabled"
-                            : "active"
-                        }
-                      />
-                      <button
-                        type="submit"
-                        disabled={user.role === "platform_admin"}
-                        className="text-xs font-semibold text-slate-500 underline disabled:opacity-50"
-                      >
-                        {user.membershipStatus === "active"
-                          ? "Disable membership"
-                          : "Reactivate membership"}
-                      </button>
-                    </form>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold">Role permission matrix</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          Default permissions are enforced server-side. Membership overrides are
-          intentionally audited and will be exposed in the next administration
-          slice.
-        </p>
-        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {Object.entries(defaultRolePermissions).map(
-            ([role, rolePermissionList]) => (
-              <article
-                key={role}
-                className="rounded-xl border border-slate-200 p-4"
-              >
-                <h3 className="font-semibold">
-                  {roleLabels[role as keyof typeof roleLabels]}
-                </h3>
-                <ul className="mt-3 space-y-2 text-sm text-slate-600">
-                  {rolePermissionList.map((permission) => (
-                    <li key={permission} className="flex gap-2">
-                      <span className="text-teal-700">✓</span>
-                      {permissionLabels[permission]}
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            ),
-          )}
-        </div>
-      </section>
-    </div>
-  );
+  return <div className="space-y-6">
+    <header className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-sm font-medium text-teal-700">Administration</p><h1 className="mt-1 text-3xl font-semibold tracking-tight">Users &amp; access</h1><p className="mt-2 max-w-2xl text-sm text-slate-600">Manage hospital staff accounts, roles, permissions, invitations, and system access.</p></div><details className="relative"><summary className="cursor-pointer list-none rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white">+ Invite user</summary><div className="absolute right-0 z-10 mt-2 w-[min(92vw,30rem)] rounded-xl border border-slate-200 bg-white p-5 shadow-xl"><h2 className="font-semibold">Invite hospital user</h2><p className="mt-1 text-xs text-slate-500">Platform administrator access cannot be assigned here.</p><form action={inviteUserAction} className="mt-4 space-y-3"><input type="hidden" name="hospitalId" value={context.hospital.id}/><label className="block text-sm font-medium">Full name<input required name="displayName" className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2"/></label><label className="block text-sm font-medium">Email<input required type="email" name="email" className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2"/></label><label className="block text-sm font-medium">Role<select name="role" defaultValue="reception_staff" className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2">{assignableRoles.map((item) => <option key={item} value={item}>{roleLabels[item]}</option>)}</select></label><button className="w-full rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white">Send invitation</button></form></div></details></header>
+    {success === "invited" ? <p role="status" className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">Invitation sent.</p> : null}
+    <nav className="flex gap-6 border-b border-slate-200 text-sm font-semibold"><Tab active={tab === "users"} href="/admin/users?tab=users">Users</Tab><Tab active={tab === "invitations"} href="/admin/users?tab=invitations">Invitations</Tab><Tab active={tab === "roles"} href="/admin/users?tab=roles">Roles &amp; permissions</Tab></nav>
+    {tab === "roles" ? <RoleView/> : tab === "invitations" ? <InvitationView invitations={invitations}/> : <>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4"><Metric label="Active users" value={active}/><Metric label="Pending invitations" value="—" hint="Provider-managed"/><Metric label="Disabled" value={disabled}/><Metric label="Custom access" value={custom}/></div>
+      <form className="flex flex-wrap gap-3 rounded-xl border border-slate-200 bg-white p-4"><input name="search" defaultValue={search} placeholder="Search name or email..." className="min-w-[15rem] flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"/><select name="role" defaultValue={role} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"><option value="">All roles</option>{Object.entries(roleLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select><select name="status" defaultValue={status} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"><option value="">All status</option><option value="active">Active</option><option value="disabled">Disabled</option></select><button className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold">Filter</button></form>
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white"><div className="border-b border-slate-200 p-5"><h2 className="font-semibold">Hospital users</h2><p className="mt-1 text-sm text-slate-500">{users.length} matching membership{users.length === 1 ? "" : "s"}.</p></div><div className="overflow-x-auto"><table className="w-full min-w-[50rem] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">User</th><th className="px-5 py-3">Role</th><th className="px-5 py-3">Scope</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Access</th><th className="px-5 py-3"/></tr></thead><tbody className="divide-y divide-slate-200">{users.map((user) => <tr key={user.membershipId} className="hover:bg-slate-50"><td className="px-5 py-4"><Link className="font-semibold text-slate-900 hover:text-teal-700" href={`/admin/users/${user.membershipId}`}>{user.displayName}</Link><div className="text-slate-500">{user.email}</div></td><td className="px-5 py-4"><span className="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-800">{roleLabels[user.role]}</span></td><td className="px-5 py-4 text-slate-600">Hospital-wide</td><td className="px-5 py-4"><span className={user.membershipStatus === "active" ? "text-green-700" : "text-slate-500"}>{user.membershipStatus === "active" ? "Active" : "Disabled"}</span></td><td className="px-5 py-4 text-slate-600">{user.hasCustomPermissions ? "Custom" : "Standard"}</td><td className="px-5 py-4 text-right"><Link className="font-semibold text-teal-700" href={`/admin/users/${user.membershipId}`}>View</Link></td></tr>)}</tbody></table>{users.length === 0 ? <p className="p-8 text-center text-sm text-slate-500">No users match these filters.</p> : null}</div></section>
+    </>}
+  </div>;
 }
+function Tab({ active, href, children }: { active: boolean; href: string; children: React.ReactNode }) { return <Link className={active ? "border-b-2 border-teal-700 pb-3 text-teal-800" : "pb-3 text-slate-500"} href={href}>{children}</Link>; }
+function Metric({ label, value, hint }: { label: string; value: number | string; hint?: string }) { return <div className="rounded-xl border border-slate-200 bg-white px-4 py-3"><div className="text-xs font-medium text-slate-500">{label}</div><div className="mt-1 text-xl font-semibold text-slate-900">{value}</div>{hint ? <div className="text-[11px] text-slate-400">{hint}</div> : null}</div>; }
+function InvitationView({ invitations }: { invitations: Awaited<ReturnType<typeof listPendingHospitalInvitations>> }) { return <section className="rounded-xl border border-slate-200 bg-white p-6"><h2 className="font-semibold">Pending invitations</h2><p className="mt-2 text-sm text-slate-600">Pending status is read from Supabase Auth; HVA membership and role remain hospital-scoped.</p>{invitations.length ? <div className="mt-5 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="text-xs uppercase text-slate-500"><tr><th className="py-2">User</th><th className="py-2">Role</th><th className="py-2">Invited</th><th className="py-2">Status</th></tr></thead><tbody className="divide-y divide-slate-200">{invitations.map((invite) => <tr key={invite.email}><td className="py-3"><div className="font-semibold">{invite.displayName}</div><div className="text-slate-500">{invite.email}</div></td><td className="py-3">{roleLabels[invite.role]}</td><td className="py-3">{invite.invitedAt ? new Date(invite.invitedAt).toLocaleDateString("en-GB") : "—"}</td><td className="py-3 text-amber-700">Pending</td></tr>)}</tbody></table></div> : <div className="mt-5 rounded-lg bg-slate-50 p-4 text-sm text-slate-600">No pending invitations found.</div>}</section>; }
+function RoleView() { return <section className="space-y-4">{Object.entries(defaultRolePermissions).filter(([role]) => role !== "platform_admin").map(([role, permissionList]) => <article key={role} className="rounded-xl border border-slate-200 bg-white p-5"><div className="flex items-center justify-between"><div><h2 className="font-semibold">{roleLabels[role as Role]}</h2><p className="mt-1 text-sm text-slate-500">System role · default hospital access</p></div><span className="text-xs text-slate-500">{permissionList.length} permissions</span></div><div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{permissionList.map((permission) => <div key={permission} className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700"><span className="mr-2 text-teal-700">✓</span>{permissionLabels[permission]}</div>)}</div></article>)}</section>; }

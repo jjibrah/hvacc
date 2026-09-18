@@ -12,8 +12,11 @@ import {
   doctors,
   hospitalConfigurations,
   hospitalMemberships,
+  membershipPermissions,
   hospitals,
   profiles,
+  rolePermissions,
+  doctorProfileLinks,
   retellAgents,
   retellAgentVersions,
   retellPhoneNumbers,
@@ -65,6 +68,14 @@ const hospitalConfigInput = z.object({
   syntheticAddress: z.string().trim().max(500).nullable(),
   expectedUpdatedAt: z.coerce.date().optional(),
   expectedConfigurationUpdatedAt: z.coerce.date().optional(),
+  operatingHours: z.record(z.string(), z.unknown()).optional(),
+  appointmentPolicy: z.record(z.string(), z.unknown()).optional(),
+  patientPolicy: z.record(z.string(), z.unknown()).optional(),
+  followUpPolicy: z.record(z.string(), z.unknown()).optional(),
+  voicePolicy: z.record(z.string(), z.unknown()).optional(),
+  notificationPolicy: z.record(z.string(), z.unknown()).optional(),
+  privacyPolicy: z.record(z.string(), z.unknown()).optional(),
+  accessPolicy: z.record(z.string(), z.unknown()).optional(),
 });
 const departmentInput = z.object({
   hospitalId: z.string().uuid(),
@@ -170,13 +181,15 @@ export type UserMembershipRow = {
   updatedAt: Date;
   hospitalId: string;
   hospitalName: string;
+  hasCustomPermissions: boolean;
 };
 
 export async function listHospitalUsers(
   hospitalId: string,
+  options: { search?: string; role?: string; status?: string } = {},
 ): Promise<UserMembershipRow[]> {
   await requireMembershipPermission(hospitalId, "memberships.manage");
-  return db
+  const rows = await db
     .select({
       membershipId: hospitalMemberships.id,
       profileId: profiles.id,
@@ -192,7 +205,284 @@ export async function listHospitalUsers(
     .from(hospitalMemberships)
     .innerJoin(profiles, eq(profiles.id, hospitalMemberships.profileId))
     .innerJoin(hospitals, eq(hospitals.id, hospitalMemberships.hospitalId))
+    .where(
+      and(
+        eq(hospitalMemberships.hospitalId, hospitalId),
+        options.role
+          ? eq(hospitalMemberships.role, options.role as Role)
+          : undefined,
+        options.status
+          ? eq(
+              hospitalMemberships.status,
+              options.status as "active" | "disabled",
+            )
+          : undefined,
+        options.search
+          ? sql`(${profiles.displayName} ilike ${`%${options.search}%`} or ${profiles.email} ilike ${`%${options.search}%`})`
+          : undefined,
+      ),
+    )
+    .orderBy(profiles.displayName);
+  const overrides = rows.length
+    ? await db
+        .select({ membershipId: membershipPermissions.membershipId })
+        .from(membershipPermissions)
+        .where(
+          inArray(
+            membershipPermissions.membershipId,
+            rows.map((row) => row.membershipId),
+          ),
+        )
+    : [];
+  const custom = new Set(overrides.map((row) => row.membershipId));
+  return rows.map((row) => ({
+    ...row,
+    hasCustomPermissions: custom.has(row.membershipId),
+  }));
+}
+
+export async function getHospitalUserDetail(
+  hospitalId: string,
+  membershipId: string,
+) {
+  await requireMembershipPermission(hospitalId, "memberships.manage");
+  const user = await db
+    .select({
+      membershipId: hospitalMemberships.id,
+      profileId: profiles.id,
+      displayName: profiles.displayName,
+      email: profiles.email,
+      profileStatus: profiles.status,
+      role: hospitalMemberships.role,
+      membershipStatus: hospitalMemberships.status,
+      createdAt: hospitalMemberships.createdAt,
+      updatedAt: hospitalMemberships.updatedAt,
+      hospitalId: hospitals.id,
+      hospitalName: hospitals.displayName,
+    })
+    .from(hospitalMemberships)
+    .innerJoin(profiles, eq(profiles.id, hospitalMemberships.profileId))
+    .innerJoin(hospitals, eq(hospitals.id, hospitalMemberships.hospitalId))
+    .where(
+      and(
+        eq(hospitalMemberships.id, membershipId),
+        eq(hospitalMemberships.hospitalId, hospitalId),
+      ),
+    )
+    .then((rows) => rows[0]);
+  if (!user) throw new ResourceNotFoundError();
+  const [overrides, doctorLink] = await Promise.all([
+    db
+      .select()
+      .from(membershipPermissions)
+      .where(
+        and(
+          eq(membershipPermissions.hospitalId, hospitalId),
+          eq(membershipPermissions.membershipId, membershipId),
+        ),
+      ),
+    db
+      .select({
+        doctorId: doctorProfileLinks.doctorId,
+        displayName: doctors.displayName,
+        departmentId: doctors.departmentId,
+      })
+      .from(doctorProfileLinks)
+      .innerJoin(
+        doctors,
+        and(
+          eq(doctors.id, doctorProfileLinks.doctorId),
+          eq(doctors.hospitalId, doctorProfileLinks.hospitalId),
+        ),
+      )
+      .where(
+        and(
+          eq(doctorProfileLinks.hospitalId, hospitalId),
+          eq(doctorProfileLinks.profileId, user.profileId),
+        ),
+      )
+      .then((rows) => rows[0] ?? null),
+  ]);
+  return { ...user, overrides, doctorLink };
+}
+
+export async function listRolePermissions(hospitalId: string) {
+  await requireMembershipPermission(hospitalId, "memberships.manage");
+  return db.select().from(rolePermissions);
+}
+
+export async function setMembershipPermissionOverride(input: unknown) {
+  const parsed = z
+    .object({
+      hospitalId: z.string().uuid(),
+      membershipId: z.string().uuid(),
+      permissionCode: z.string().min(1),
+      granted: z.boolean(),
+      reason: z.string().trim().min(1).max(300),
+    })
+    .parse(input);
+  const { actor } = await requireMembershipPermission(
+    parsed.hospitalId,
+    "memberships.manage",
+  );
+  const target = await db.query.hospitalMemberships.findFirst({
+    where: and(
+      eq(hospitalMemberships.id, parsed.membershipId),
+      eq(hospitalMemberships.hospitalId, parsed.hospitalId),
+    ),
+  });
+  if (!target) throw new ResourceNotFoundError();
+  if (target.role === "platform_admin") throw new AuthorizationDeniedError();
+  await db
+    .insert(membershipPermissions)
+    .values(parsed)
+    .onConflictDoUpdate({
+      target: [
+        membershipPermissions.membershipId,
+        membershipPermissions.permissionCode,
+      ],
+      set: {
+        granted: parsed.granted,
+        reason: parsed.reason,
+        createdAt: new Date(),
+      },
+    });
+  await writeAudit({
+    hospitalId: parsed.hospitalId,
+    actorProfileId: actor.profileId,
+    action: parsed.granted
+      ? "membership.permission_granted"
+      : "membership.permission_denied",
+    targetType: "hospital_membership",
+    targetId: target.id,
+    result: "succeeded",
+    safeAfter: { permission: parsed.permissionCode, granted: parsed.granted },
+  });
+}
+
+export async function removeMembershipPermissionOverride(input: unknown) {
+  const parsed = z
+    .object({
+      hospitalId: z.string().uuid(),
+      membershipId: z.string().uuid(),
+      permissionCode: z.string().min(1),
+    })
+    .parse(input);
+  const { actor } = await requireMembershipPermission(
+    parsed.hospitalId,
+    "memberships.manage",
+  );
+  await db
+    .delete(membershipPermissions)
+    .where(
+      and(
+        eq(membershipPermissions.hospitalId, parsed.hospitalId),
+        eq(membershipPermissions.membershipId, parsed.membershipId),
+        eq(membershipPermissions.permissionCode, parsed.permissionCode),
+      ),
+    );
+  await writeAudit({
+    hospitalId: parsed.hospitalId,
+    actorProfileId: actor.profileId,
+    action: "membership.permission_override_removed",
+    targetType: "hospital_membership",
+    targetId: parsed.membershipId,
+    result: "succeeded",
+    safeAfter: { permission: parsed.permissionCode },
+  });
+}
+
+export async function linkDoctorProfile(input: unknown) {
+  const parsed = z
+    .object({
+      hospitalId: z.string().uuid(),
+      membershipId: z.string().uuid(),
+      doctorId: z.string().uuid(),
+    })
+    .parse(input);
+  const { actor } = await requireMembershipPermission(
+    parsed.hospitalId,
+    "memberships.manage",
+  );
+  const membership = await db.query.hospitalMemberships.findFirst({
+    where: and(
+      eq(hospitalMemberships.id, parsed.membershipId),
+      eq(hospitalMemberships.hospitalId, parsed.hospitalId),
+    ),
+  });
+  const doctor = await db.query.doctors.findFirst({
+    where: and(
+      eq(doctors.id, parsed.doctorId),
+      eq(doctors.hospitalId, parsed.hospitalId),
+    ),
+  });
+  if (!membership || !doctor) throw new ResourceNotFoundError();
+  await db.insert(doctorProfileLinks).values({
+    hospitalId: parsed.hospitalId,
+    doctorId: parsed.doctorId,
+    profileId: membership.profileId,
+  });
+  await writeAudit({
+    hospitalId: parsed.hospitalId,
+    actorProfileId: actor.profileId,
+    action: "membership.doctor_profile_linked",
+    targetType: "hospital_membership",
+    targetId: membership.id,
+    result: "succeeded",
+    safeAfter: { doctorId: doctor.id },
+  });
+}
+
+export async function listLinkableDoctors(hospitalId: string) {
+  await requireMembershipPermission(hospitalId, "memberships.manage");
+  return db
+    .select({
+      id: doctors.id,
+      displayName: doctors.displayName,
+      stableKey: doctors.stableKey,
+    })
+    .from(doctors)
+    .where(eq(doctors.hospitalId, hospitalId))
+    .orderBy(doctors.displayName);
+}
+
+export async function listPendingHospitalInvitations(hospitalId: string) {
+  await requireMembershipPermission(hospitalId, "memberships.manage");
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.auth.admin.listUsers({
+    page: 1,
+    perPage: 1000,
+  });
+  if (error) throw new Error("Pending invitations could not be loaded.");
+  const authUsers = data.users.filter(
+    (user) => user.invited_at && !user.last_sign_in_at,
+  );
+  if (!authUsers.length) return [];
+  const rows = await db
+    .select({
+      email: profiles.email,
+      displayName: profiles.displayName,
+      role: hospitalMemberships.role,
+      membershipStatus: hospitalMemberships.status,
+    })
+    .from(hospitalMemberships)
+    .innerJoin(profiles, eq(profiles.id, hospitalMemberships.profileId))
     .where(eq(hospitalMemberships.hospitalId, hospitalId));
+  const byEmail = new Map(rows.map((row) => [row.email.toLowerCase(), row]));
+  return authUsers.flatMap((user) => {
+    const row = byEmail.get((user.email ?? "").toLowerCase());
+    return row
+      ? [
+          {
+            email: row.email,
+            displayName: row.displayName,
+            role: row.role,
+            invitedAt: user.invited_at,
+            status: row.membershipStatus,
+          },
+        ]
+      : [];
+  });
 }
 
 export async function updateHospitalUserRole(input: {
@@ -215,6 +505,7 @@ export async function updateHospitalUserRole(input: {
     ),
   });
   if (!target) throw new ResourceNotFoundError();
+  if (target.role === "platform_admin") throw new AuthorizationDeniedError();
 
   await db.transaction(async (tx) => {
     if (target.role === "hospital_admin" && parsedRole !== "hospital_admin") {
@@ -414,6 +705,26 @@ export async function updateHospitalConfiguration(input: unknown) {
         syntheticContactPhone: parsed.syntheticContactPhone,
         syntheticAddress: parsed.syntheticAddress,
         updatedAt: new Date(),
+        ...(parsed.operatingHours
+          ? { operatingHours: parsed.operatingHours }
+          : {}),
+        ...(parsed.appointmentPolicy
+          ? { appointmentPolicy: parsed.appointmentPolicy }
+          : {}),
+        ...(parsed.patientPolicy
+          ? { patientPolicy: parsed.patientPolicy }
+          : {}),
+        ...(parsed.followUpPolicy
+          ? { followUpPolicy: parsed.followUpPolicy }
+          : {}),
+        ...(parsed.voicePolicy ? { voicePolicy: parsed.voicePolicy } : {}),
+        ...(parsed.notificationPolicy
+          ? { notificationPolicy: parsed.notificationPolicy }
+          : {}),
+        ...(parsed.privacyPolicy
+          ? { privacyPolicy: parsed.privacyPolicy }
+          : {}),
+        ...(parsed.accessPolicy ? { accessPolicy: parsed.accessPolicy } : {}),
       })
       .where(
         and(
@@ -443,24 +754,74 @@ export async function updateHospitalConfiguration(input: unknown) {
       stableKey: before.stableKey,
       timezone: config.timezone,
       currencyCode: config.currencyCode,
+      operatingHours: config.operatingHours,
+      appointmentPolicy: config.appointmentPolicy,
+      patientPolicy: config.patientPolicy,
+      followUpPolicy: config.followUpPolicy,
+      voicePolicy: config.voicePolicy,
+      notificationPolicy: config.notificationPolicy,
+      privacyPolicy: config.privacyPolicy,
+      accessPolicy: config.accessPolicy,
     },
     safeAfter: {
       displayName: parsed.displayName,
       stableKey: parsed.stableKey,
       timezone: parsed.timezone,
       currencyCode: parsed.currencyCode,
+      operatingHours: parsed.operatingHours,
+      appointmentPolicy: parsed.appointmentPolicy,
+      patientPolicy: parsed.patientPolicy,
+      followUpPolicy: parsed.followUpPolicy,
+      voicePolicy: parsed.voicePolicy,
+      notificationPolicy: parsed.notificationPolicy,
+      privacyPolicy: parsed.privacyPolicy,
+      accessPolicy: parsed.accessPolicy,
     },
   });
 }
 
-export async function listHospitalAuditEvents(hospitalId: string) {
+export async function listHospitalAuditEvents(
+  hospitalId: string,
+  options: { page?: number; pageSize?: number } = {},
+) {
   await requireMembershipPermission(hospitalId, "audits.read");
-  return db
-    .select()
-    .from(auditEvents)
-    .where(eq(auditEvents.hospitalId, hospitalId))
-    .orderBy(desc(auditEvents.occurredAt))
-    .limit(100);
+  const pageSize = Math.min(Math.max(options.pageSize ?? 10, 1), 10);
+  const page = Math.max(Math.floor(options.page ?? 1), 1);
+  const where = eq(auditEvents.hospitalId, hospitalId);
+  const [events, countRows] = await Promise.all([
+    db
+      .select({
+        event: auditEvents,
+        actorDisplayName: profiles.displayName,
+        actorEmail: profiles.email,
+      })
+      .from(auditEvents)
+      .leftJoin(profiles, eq(profiles.id, auditEvents.actorProfileId))
+      .where(where)
+      .orderBy(desc(auditEvents.occurredAt))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize),
+    db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(auditEvents)
+      .where(where),
+  ]);
+  const total = Number(countRows[0]?.total ?? 0);
+  return {
+    events: events.map(({ event, actorDisplayName, actorEmail }) => ({
+      ...event,
+      who:
+        actorDisplayName || actorEmail
+          ? { displayName: actorDisplayName, email: actorEmail }
+          : event.actorKind === "provider"
+            ? { displayName: event.actorProviderId ?? "Provider", email: null }
+            : { displayName: "System", email: null },
+    })),
+    page,
+    pageSize,
+    total,
+    totalPages: Math.max(Math.ceil(total / pageSize), 1),
+  };
 }
 
 export async function saveDepartment(input: unknown) {

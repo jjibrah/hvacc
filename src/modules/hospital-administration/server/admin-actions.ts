@@ -15,6 +15,7 @@ export async function updateRoleAction(formData: FormData) {
       hospitalId: String(formData.get("hospitalId") ?? ""),
       membershipId: String(formData.get("membershipId") ?? ""),
       role: String(formData.get("role") ?? ""),
+      expectedUpdatedAt: String(formData.get("expectedUpdatedAt") ?? "") || undefined,
     });
   } catch (error) {
     if (error instanceof Error && "status" in error && error.status === 401) {

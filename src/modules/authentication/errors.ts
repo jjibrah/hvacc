@@ -45,6 +45,24 @@ export class DuplicateResourceError extends Error {
   }
 }
 
+export class BookingConflictError extends Error {
+  readonly status = 409;
+
+  constructor(message = "The requested appointment slot is unavailable.") {
+    super(message);
+    this.name = "BookingConflictError";
+  }
+}
+
+export class ConfirmationRequiredError extends Error {
+  readonly status = 400;
+
+  constructor() {
+    super("Explicit confirmation is required.");
+    this.name = "ConfirmationRequiredError";
+  }
+}
+
 export function isAuthError(
   error: unknown,
 ): error is Error & { status: 401 | 403 | 404 | 409 } {

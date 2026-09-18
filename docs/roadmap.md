@@ -30,7 +30,7 @@ calls, and provider data must remain synthetic until separately approved.
 | 2. Core database and domain model | Backend | Complete | Fresh migrations and deterministic seed succeed |
 | 3. Identity and authorization backend | Backend | In progress | Every operation has tested auth, membership, permission, and scope checks |
 | 4. Hospital administration backend | Backend | In progress | Configuration, users, departments, and doctors are manageable through APIs |
-| 5. Scheduling and appointment backend | Backend | Not started | Availability, capacity, booking, cancellation, and rescheduling are transactional |
+| 5. Scheduling and appointment backend | Backend | In progress | Availability, capacity, booking, cancellation, and rescheduling are transactional |
 | 6. Retell provider backend | Backend | In progress | Retell inventory, event receipt, evidence, and sync status are reliable |
 | 7. Operational backend | Backend | Not started | Calls, follow-ups, handoffs, and diagnostics have complete server workflows |
 | 8. Frontend application shell | Frontend | Partially complete | The client works against typed backend contracts and handles failure states |
@@ -102,13 +102,13 @@ Exit gate: hospital administrators can manage permitted configuration through AP
 
 ## Module 5 — Scheduling and appointment backend
 
-- [ ] Implement recurring schedules, dated sessions, closures, exceptions, and timezone-aware availability.
-- [ ] Make the backend the sole availability authority.
-- [ ] Implement transactional final-slot reservation and capacity release.
-- [ ] Implement caller/patient distinction and safe matching.
-- [ ] Require explicit confirmation and idempotency for booking.
-- [ ] Implement exactly-once cancellation and atomic rescheduling.
-- [ ] Preserve appointment history and audit every mutation.
+- [x] Implement recurring schedules, dated sessions, closures, exceptions, and timezone-aware availability.
+- [x] Make the backend the sole availability authority.
+- [x] Implement transactional final-slot reservation and capacity release.
+- [x] Implement caller/patient distinction and safe matching.
+- [x] Require explicit confirmation and idempotency for booking.
+- [x] Implement exactly-once cancellation and atomic rescheduling.
+- [x] Preserve appointment history and audit every mutation.
 - [ ] Test retries, family bookings, timezone boundaries, closed sessions, and concurrent final-slot requests.
 
 Exit gate: only one of two concurrent requests can consume the final slot; retries do not duplicate or corrupt appointments.

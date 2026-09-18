@@ -4,7 +4,9 @@ import { ZodError } from "zod";
 import {
   AuthenticationRequiredError,
   AuthorizationDeniedError,
+  BookingConflictError,
   ConcurrentModificationError,
+  ConfirmationRequiredError,
   DuplicateResourceError,
   ResourceNotFoundError,
 } from "./errors";
@@ -33,6 +35,12 @@ export function authErrorResponse(error: unknown) {
       { error: "The resource already exists." },
       { status: 409 },
     );
+  }
+  if (error instanceof BookingConflictError) {
+    return NextResponse.json({ error: error.message }, { status: 409 });
+  }
+  if (error instanceof ConfirmationRequiredError) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
   if (error instanceof ZodError) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
