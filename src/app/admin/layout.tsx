@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { roleLabels } from "@/modules/authentication";
 import { isAuthError } from "@/modules/authentication/errors";
 import { signOutAction } from "@/modules/authentication/login-actions";
-import { getDashboardContext } from "@/modules/authentication/service";
+import { getDashboardContext } from "@/modules/hospital-administration/server/service";
 import { getNavigationForActor } from "@/modules/dashboard/navigation";
 import { AppShell } from "@/shared/ui/layout/app-shell";
 

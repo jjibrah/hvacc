@@ -21,15 +21,20 @@ import {
   knowledgeSources,
 } from "@/modules/database/schema";
 
-import { evaluateAuthorization } from "./authorization";
-import { requireAuthorizationActor } from "./actor";
+import { evaluateAuthorization } from "@/modules/authentication/authorization";
+import { requireAuthorizationActor } from "@/modules/authentication/actor";
 import {
   AuthorizationDeniedError,
   ConcurrentModificationError,
+  DuplicateResourceError,
   ResourceNotFoundError,
-} from "./errors";
-import { assignableRoles, type Permission, type Role } from "./roles";
-import { createSupabaseAdminClient } from "./supabase/admin";
+} from "@/modules/authentication/errors";
+import {
+  assignableRoles,
+  type Permission,
+  type Role,
+} from "@/modules/authentication/roles";
+import { createSupabaseAdminClient } from "@/modules/authentication/supabase/admin";
 
 export const membershipRoleInput = z.enum(assignableRoles);
 export const inviteUserInput = z.object({
@@ -635,8 +640,16 @@ export async function inviteHospitalUser(input: unknown) {
         role: parsed.role,
       });
     });
-  } catch {
+  } catch (error) {
     await admin.auth.admin.deleteUser(data.user.id);
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "23505"
+    ) {
+      throw new DuplicateResourceError();
+    }
     throw new Error("The user invitation could not be saved.");
   }
 

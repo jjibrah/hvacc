@@ -5,7 +5,7 @@ import { authErrorResponse } from "@/modules/authentication/http";
 import {
   getHospitalAdministration,
   saveDepartment,
-} from "@/modules/authentication/service";
+} from "@/modules/hospital-administration/server/service";
 
 const query = z.object({ hospitalId: z.string().uuid() });
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { authErrorResponse } from "@/modules/authentication/http";
-import { listHospitalAuditEvents } from "@/modules/authentication/service";
+import { listHospitalAuditEvents } from "@/modules/hospital-administration/server/service";
 
 export async function GET(request: Request) {
   try {

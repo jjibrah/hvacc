@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { isAuthError } from "@/modules/authentication/errors";
-import { getDashboardContext } from "@/modules/authentication/service";
+import { getDashboardContext } from "@/modules/hospital-administration/server/service";
 import { getNavigationForActor } from "@/modules/dashboard/navigation";
 
 const sectionDetails = {

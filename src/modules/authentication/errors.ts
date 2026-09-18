@@ -36,6 +36,15 @@ export class ConcurrentModificationError extends Error {
   }
 }
 
+export class DuplicateResourceError extends Error {
+  readonly status = 409;
+
+  constructor() {
+    super("The resource already exists.");
+    this.name = "DuplicateResourceError";
+  }
+}
+
 export function isAuthError(
   error: unknown,
 ): error is Error & { status: 401 | 403 | 404 | 409 } {

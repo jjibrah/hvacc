@@ -94,8 +94,8 @@ Exit gate: direct requests cannot bypass UI permissions or leak cross-hospital r
 - [x] Audit events for access, role, configuration, department, doctor, and provider events.
 - [x] `updatedAt` compare-and-swap and safe conflict errors.
 - [x] API routes for hospital, users, membership status, departments, doctors, inventory, and audit events.
-- [ ] Move administration services into `src/modules/hospital-administration/server` and keep authentication focused on identity/RBAC.
-- [ ] Add API contract tests for authorized, unauthorized, malformed, cross-hospital, stale, and duplicate requests.
+- [x] Move administration services into `src/modules/hospital-administration/server` and keep authentication focused on identity/RBAC.
+- [x] Add API contract tests for authorized, unauthorized, malformed, cross-hospital, stale, and duplicate requests.
 - [ ] Add integration mutations after provider sync rules are defined.
 
 Exit gate: hospital administrators can manage permitted configuration through APIs; every other role is rejected; the final active administrator cannot be removed or demoted.

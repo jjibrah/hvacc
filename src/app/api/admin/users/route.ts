@@ -5,7 +5,7 @@ import { authErrorResponse } from "@/modules/authentication/http";
 import {
   inviteHospitalUser,
   listHospitalUsers,
-} from "@/modules/authentication/service";
+} from "@/modules/hospital-administration/server/service";
 
 const hospitalQuery = z.object({ hospitalId: z.string().uuid() });
 

@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
 import { authErrorResponse } from "@/modules/authentication/http";
-import { updateHospitalUserRole } from "@/modules/authentication/service";
+import { updateHospitalUserRole } from "@/modules/hospital-administration/server/service";
+
+const bodySchema = z.object({
+  hospitalId: z.string().uuid(),
+  role: z.string(),
+  expectedUpdatedAt: z.coerce.date().optional(),
+});
 
 export async function PATCH(
   request: Request,
@@ -9,7 +16,7 @@ export async function PATCH(
 ) {
   try {
     const { membershipId } = await params;
-    const body = await request.json();
+    const body = bodySchema.parse(await request.json());
     await updateHospitalUserRole({
       hospitalId: body.hospitalId,
       membershipId,

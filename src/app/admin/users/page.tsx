@@ -10,12 +10,12 @@ import { isAuthError } from "@/modules/authentication/errors";
 import {
   getUserManagementContext,
   listHospitalUsers,
-} from "@/modules/authentication/service";
+} from "@/modules/hospital-administration/server/service";
 import {
   inviteUserAction,
   updateRoleAction,
-} from "@/modules/authentication/admin-actions";
-import { updateMembershipStatusAction } from "@/modules/authentication/administration-actions";
+} from "@/modules/hospital-administration/server/admin-actions";
+import { updateMembershipStatusAction } from "@/modules/hospital-administration/server/administration-actions";
 
 export default async function UsersPage({
   searchParams,

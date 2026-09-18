@@ -3,7 +3,7 @@ import { isAuthError } from "@/modules/authentication/errors";
 import {
   getHospitalAdministration,
   getUserManagementContext,
-} from "@/modules/authentication/service";
+} from "@/modules/hospital-administration/server/service";
 
 export default async function Page() {
   let context;

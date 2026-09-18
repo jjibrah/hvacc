@@ -5,6 +5,7 @@ import {
   AuthenticationRequiredError,
   AuthorizationDeniedError,
   ConcurrentModificationError,
+  DuplicateResourceError,
   ResourceNotFoundError,
 } from "./errors";
 
@@ -27,8 +28,28 @@ export function authErrorResponse(error: unknown) {
       { status: 409 },
     );
   }
+  if (error instanceof DuplicateResourceError) {
+    return NextResponse.json(
+      { error: "The resource already exists." },
+      { status: 409 },
+    );
+  }
   if (error instanceof ZodError) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
+  if (error instanceof SyntaxError) {
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    error.code === "23505"
+  ) {
+    return NextResponse.json(
+      { error: "The resource already exists." },
+      { status: 409 },
+    );
   }
   return NextResponse.json(
     { error: "Request could not be completed." },

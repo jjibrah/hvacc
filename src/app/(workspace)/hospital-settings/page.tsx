@@ -3,8 +3,8 @@ import { isAuthError } from "@/modules/authentication/errors";
 import {
   getHospitalAdministration,
   getUserManagementContext,
-} from "@/modules/authentication/service";
-import { saveHospitalConfigurationAction } from "@/modules/authentication/administration-actions";
+} from "@/modules/hospital-administration/server/service";
+import { saveHospitalConfigurationAction } from "@/modules/hospital-administration/server/administration-actions";
 
 export default async function Page({
   searchParams,

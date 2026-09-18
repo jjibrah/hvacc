@@ -10,6 +10,10 @@ export function createDatabaseConnection(databaseUrl: string) {
   const client = postgres(databaseUrl, {
     max: 1,
     prepare: false,
+    // Do not let an unavailable Supabase project or blocked pooler make every
+    // authenticated page wait for postgres.js's 30-second default.
+    connect_timeout: 5,
+    idle_timeout: 20,
     ssl: databaseUrl.includes("localhost") ? false : "require",
   });
 
